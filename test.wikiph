@@ -1,0 +1,15 @@
+title:Gobblins in Scornubel
+orte:scornubel
+gruppe:mandrio, baihu, balasar, ulfgard, kairon
+zeit:1138, 05, 00
+start
+
+[DM:]$subsection{
+Fünti
+}
+
+[Die Gruppe]$list{[$tags{gruppe}]$linknames{/sc/}}
+
+$time{$tag{zeit}}
+
+[mandrio]$link{/sc/mandrio}

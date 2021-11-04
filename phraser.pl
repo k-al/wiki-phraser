@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-use lib 'phraser';
+use lib 'wiki-phraser';
 
 use util::RecursiveFileEdit;
 
@@ -75,17 +75,57 @@ sub get_args {
     return %arg;
 }
 
-sub interpreter {
+sub phrase {
+    defined(my $file_name = shift) or die "Died in __FILE__::phrase()\n  No file path given!\n";
+    defined(my $phrase_tree = shift) or die "Died in __FILE__::phrase()\n  Phrase tree is lost!\n";
+    defined(my $home = shift) or die "Died in __FILE__::phrase()\n  Home is not defined! (mark no home with empty string)\n";
     
+    open(INFILE, $file_name) or die "Died in __FILE__::phrase()\n  Could not open file '$file_name'.\n$!";
     
+    my %meta = read_metadata(\*INFILE, $file_name);
     
-    while (m/(\[.*?\]|\S*[^\]\\])\$(tag|picture|section|)\{(.*?)\}/) { # should match: [a multi word phrase]$tag{something} and one_word(phrase)$tag{some other thing}
-        
-    }
+    close INFILE;
 }
 
+sub read_metadata {
+    defined(my $fh = shift) or die "Died in __FILE__::get_till_bracket_end()\n  No file handle given!\n";
+    defined(my $file_name = shift) or die "Died in __FILE__::get_till_bracket_end()\n  No file name given!\n";
+    
+    my %meta;
+    my @sp;
+    my $line;
+    
+    while (my $line = <$fh>) {
+        chomp($line);
+        if ($line eq 'start') {
+            return %meta;
+        } elsif ($line eq 'sideboard') {
+            warn("$file_name: Sideboard is not implemented yet!\n");
+#             must be implemented
+        } else {
+            @sp = split(':', $line, 2);
+            
+            if (not defined($sp[1])) {
+                warn "broken header in $file_name in line $. (missing 'start'?)\n";
+                next;
+            }
+            
+            chomp($sp[0]);
+            chomp($sp[1]);
+            
+            #? phrase $sp[1] for maximum flex
+            $meta{$sp[0]} = $sp[1];
+        }
+    }
+    
+    warn "$file_name is header only. (missing 'start'?)\n";
+    return %meta;
+}
+
+
+
 sub get_till_bracket_end {
-    my $string = shift or die "Died in __FILE__::get_till_bracket_end()\n  No string given!\n";
+    defined(my $string = shift) or die "Died in __FILE__::get_till_bracket_end()\n  No string given!\n";
     
     my $start_char = chop($string);
     my $end_char;
@@ -120,22 +160,22 @@ sub get_till_bracket_end {
             if ($2 == $start_char) {
                 my ($ret_val, $tmp_string) = get_till_bracket_end($start_char.$string);
                 if ($ret_val) {
-                    return 1, $string;
+                    return 0, $string;
                 }
                 $res_string .= $start_char . $tmp_string . $end_char;
             } else {
                 $i = 0; #break
             }
         } else {
-            return 1, $string;
+            return 0, $string;
         }
     }
     
-    return 0, $res_string, $';
+    return 1, $res_string, $';
 }
 
 sub get_till_bracket_start {
-    my $string = shift or die "Died in __FILE__::get_till_bracket_start()\n  No string given!\n";
+    defined(my $string = shift) or die "Died in __FILE__::get_till_bracket_start()\n  No string given!\n";
     
     my $rev_string = reverse_with_escapes($string);
     my ($ret_val, $in_bracket, $rest_string) = get_till_bracket_end($rev_string);
@@ -145,11 +185,11 @@ sub get_till_bracket_start {
     $in_bracket = reverse_with_escapes($in_bracket);
     $rest_string = reverse_with_escapes($rest_string);
     
-    return (0, $in_bracket, $rest_string);
+    return (1, $in_bracket, $rest_string);
 }
 
 sub reverse_with_escapes {
-    my $string = shift or die "Died in __FILE__::reverse_with_escapes()\n  No string given!\n";
+    defined(my $string = shift) or die "Died in __FILE__::reverse_with_escapes()\n  No string given!\n";
     $string =~ s/(?:^|[^\\])(?:\\\\)*\\([^\\])/$1\\/g; # reverse the escape cahracter '\'
     $string = reverse($string);
     return $string;

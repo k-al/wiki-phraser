@@ -1,7 +1,8 @@
 
 sub recursivAllFiles {
-    my $root = shift or die "Died in __FILE__::recursiveAllFiles()\n  No root given!\n";
-    my $func = shift or die "Died in __FILE__::recursiveAllFiles()\n  No execution function given!\n";
+    defined(my $root = shift) or die "Died in __FILE__::recursiveAllFiles()\n  No root given!\n";
+    defined(my $func = shift) or die "Died in __FILE__::recursiveAllFiles()\n  No execution function given!\n";
+    my @para_list = @_;
     
     -e $root or die "Died in __FILE__::recursiveAllFiles()\n  Root dosnt exist!\n";
     
@@ -17,23 +18,23 @@ sub recursivAllFiles {
                 push(@todo, $root.'/'.$k);
             }
         } else {
-            &$funk($element, $root);
+            &$func($element, @para_list);
         }
     }
 }
 
 #! untested pattern matching
 sub get_dir {
-    my $file = shift or die "Died in __FILE__::getDir()\n  No path given!\n";
+    defined(my $file = shift) or die "Died in __FILE__::getDir()\n  No path given!\n";
     -e $file or die "Died in __FILE__::getDir()\n  Given path is not valid!\n";
     
     # if it is already a directory, we are ready
     return $file if -d $file;
     
     if ($file =~ m/\//) { # check for normal paths
-        # delete from the last unescaped '/' unitl the end of the string and leve the '/' (to keep this working, even in the root directory)
+        # delete from the last unescaped '/' unitl the end of the string and leave the '/' (to keep this working, even in the root directory)
         $file =~ s/\/((?:[^\/]|\\(?:\\\\)*\/)*)$/\//;
-    } else { # if the file is in the active directory, the './' doesnt have to exist
+    } else { # if the file is in the active directory, the './' doesnt have to exist. so if $file has no '/' the file is probably in ./
         $file = './';
     }
     
