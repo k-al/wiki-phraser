@@ -1,8 +1,9 @@
 title:Gobblins in Scornubel
+linknames:gobblins_in_scornubel # redundant, because dat-name (without ending) is automaticly in linknames like the title
 orte:scornubel
 gruppe:mandrio, baihu, balasar, ulfgard, kairon
-zeit:1138, 05, 00
-start
+time:1138, 05, 00
+$start{main}
 
 [DM:]$subsection{
 Fünti
@@ -10,6 +11,6 @@ Fünti
 
 [Die Gruppe]$list{[$tags{gruppe}]$linknames{/sc/}}
 
-$time{$tag{zeit}}
+$time{$tag{time}}
 
 [mandrio]$link{/sc/mandrio}
