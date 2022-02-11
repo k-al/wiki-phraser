@@ -17,9 +17,30 @@ enum class Flags {
     number
 };
 
+std::string chomp (const std::string& in) {
+    bool ecased = false;
+    size_t start = in.find_first_not_of(" \n\t");
+    size_t end = in.find_last_not_of(" \n\t");
+    if (in[start] == '\'' || in[start] == '"') {
+        if ((size_t pair = in.find_last_of(in[start])) != start) {
+            end = pair - 1;
+            start++;
+        }
+    }
+    
+    end -= start;
+    
+    if (end <= 0) {
+        return "";
+    } else {
+        return in.substr(start, end);
+    }
+}
+
 struct Args {
     std::array<bool, static_cast<size_t>(Flags::number)> flags;
     fs::path logfile;
+    fs::path update_script;
     fs::path source;
     fs::path dest;
 };
@@ -50,7 +71,16 @@ int main (const int argc, const char** argv) {
                     break;
                 
                 if ((*akt_arg)[1] == '-') { // the --flag flags
-                    
+                    switch (akt_arg->substr(2)) {
+                        case "update":
+                            if ((i+1) < args.size() && args[i+1][0] != '-') {
+                                i++;
+                                arguments.flags[static_cast<size_t>(Flags::UPDATE)] = true;
+                                arguments.update_script = chomp(args[i]);
+                            } else {
+                                std::err << "word-flag '--update' was used, but no update script was specified!\n  continuing by ignoring the flag.\n";
+                            }
+                    }
                 } else { // the -f flags
                     for (int j = 1; j < akt_arg->length(); j++) {
                         switch ((*akt_arg)[j]) {
