@@ -8,3 +8,6 @@ phraser.app: main.o
 
 run: phraser.app
 	./phraser.app
+
+clean:
+	rm *.o *.app
