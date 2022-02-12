@@ -22,7 +22,8 @@ std::string chomp (const std::string& in) {
     size_t start = in.find_first_not_of(" \n\t");
     size_t end = in.find_last_not_of(" \n\t");
     if (in[start] == '\'' || in[start] == '"') {
-        if ((size_t pair = in.find_last_of(in[start])) != start) {
+        size_t pair = in.find_last_of(in[start]);
+        if (pair != start) {
             end = pair - 1;
             start++;
         }
@@ -71,15 +72,15 @@ int main (const int argc, const char** argv) {
                     break;
                 
                 if ((*akt_arg)[1] == '-') { // the --flag flags
-                    switch (akt_arg->substr(2)) {
-                        case "update":
-                            if ((i+1) < args.size() && args[i+1][0] != '-') {
-                                i++;
-                                arguments.flags[static_cast<size_t>(Flags::UPDATE)] = true;
-                                arguments.update_script = chomp(args[i]);
-                            } else {
-                                std::err << "word-flag '--update' was used, but no update script was specified!\n  continuing by ignoring the flag.\n";
-                            }
+                    std::string flag = akt_arg->substr(2);
+                    if (flag == "update") {
+                        if ((i+1) < args.size() && args[i+1][0] != '-') {
+                            i++;
+                            arguments.flags[static_cast<size_t>(Flags::UPDATE)] = true;
+                            arguments.update_script = chomp(args[i]);
+                        } else {
+                            std::cerr << "WARNIG: word-flag '--update' was used, but no update script was specified!\n  continuing by ignoring the flag.\n";
+                        }
                     }
                 } else { // the -f flags
                     for (int j = 1; j < akt_arg->length(); j++) {
@@ -109,8 +110,16 @@ int main (const int argc, const char** argv) {
                                 arguments.logfile = "./phraser.log";
                                 break;
                             
+                            case 'h':
+                                std::cout << "./phraser [<FLAGS>] [-] <source> <destination>\n\n"
+                                          << "Flags:\n"
+                                          << "-v\n\tverbose mode\n\n"
+                                          << "-h\n\tshow this help\n\n";
+                                          
+                                return 0;
+                            
                             default:
-                                std::cerr << "invalide single-char flag '" << (*akt_arg)[j] << "' is ignored!";
+                                std::cerr << "WARNIG: invalide single-char flag '" << (*akt_arg)[j] << "' is ignored!\n";
                         }
                     }
                 }
