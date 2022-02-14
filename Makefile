@@ -7,7 +7,8 @@ phraser.app: main.o
 	gcc $(CFLAGS) -o phraser.app main.o
 
 run: phraser.app
-	./phraser.app --update -sovh - ./hello ./dest
+	./phraser.app --update -h - ./hello ./dest
+	./phraser.app --update -vrok - ./hello ./dest ./ignored
 
 clean:
 	rm *.o *.app

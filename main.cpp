@@ -68,8 +68,10 @@ int main (const int argc, const char** argv) {
                 continue;
             
             if ((*akt_arg)[0] == '-') {
-                if (akt_arg->length() == 1) // a single '-' is read as end of flag setting (so the source/dest paths after could start with '-')
+                if (akt_arg->length() == 1) { // a single '-' is read as end of flag setting (so the source/dest paths after could start with '-')
+                    i++;
                     break;
+                }
                 
                 if ((*akt_arg)[1] == '-') { // the --flag flags
                     std::string flag = akt_arg->substr(2);
@@ -123,12 +125,22 @@ int main (const int argc, const char** argv) {
                         }
                     }
                 }
-                
-                
             } else {
                 break;
             }
         }
+        
+        if (args.size() - i < 2) {
+            std::cerr << "ERROR: too few Argumets!\n\tneeded: ./phraser [<Flags>] <Source> <Destionation>\n";
+            return 1;
+        } else if (args.size() - i > 2) {
+            std::cerr << "WARNIG: too many Aruments!\n\tignoring all after ./phraser [<Flags>] <Source> <Destionation>\n";
+        }
+        
+        arguments.source = chomp(args[i]);
+        arguments.dest = chomp(args[i+1]);
+        
+        
     }
     
 //     sf::path::format::generic_format
