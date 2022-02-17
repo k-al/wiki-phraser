@@ -17,39 +17,26 @@ enum class Flags {
     number
 };
 
-std::string chomp (const std::string& in) {
-    bool ecased = false;
-    size_t start = in.find_first_not_of(" \n\t");
-    size_t end = in.find_last_not_of(" \n\t");
-    if (in[start] == '\'' || in[start] == '"') {
-        size_t pair = in.find_last_of(in[start]);
-        if (pair != start) {
-            end = pair - 1;
-            start++;
-        }
-    }
-    
-    end -= start;
-    
-    if (end <= 0) {
-        return "";
-    } else {
-        return in.substr(start, end);
-    }
-}
-
 struct Args {
     std::array<bool, static_cast<size_t>(Flags::number)> flags;
     fs::path logfile;
     fs::path update_script;
     fs::path source;
     fs::path dest;
+    
+    bool get (const Flags& flag) {
+        return this->flags[static_cast<size_t>(flag)];
+    }
 };
+
+#include "string_helper.h"
+
+static Args arguments;
+static Logger logger;
 
 int main (const int argc, const char** argv) {
     
     
-    Args arguments;
     
     {
         std::vector<std::string> args;
@@ -101,6 +88,7 @@ int main (const int argc, const char** argv) {
                             
                             case 'u':
                                 arguments.flags[static_cast<size_t>(Flags::UPDATE)] = true;
+                                arguments.update_script = "./update.sh";
                                 break;
                             
                             case 's':
@@ -121,7 +109,7 @@ int main (const int argc, const char** argv) {
                                 return 0;
                             
                             default:
-                                std::cerr << "WARNIG: invalide single-char flag '" << (*akt_arg)[j] << "' is ignored!\n";
+                                std::cerr << "WARNIG: invalide single-char flag '-" << (*akt_arg)[j] << "' is ignored!\n";
                         }
                     }
                 }
@@ -140,7 +128,21 @@ int main (const int argc, const char** argv) {
         arguments.source = chomp(args[i]);
         arguments.dest = chomp(args[i+1]);
         
+        logger.update(arguments);
         
+        logger  << print_flag(arguments.flags[static_cast<size_t>(Flags::VERBOSE)], "verbose")
+                << print_flag(arguments.flags[static_cast<size_t>(Flags::SCRIPT)], "is script")
+                << print_flag(arguments.flags[static_cast<size_t>(Flags::OVERRIDE)], "override")
+                << print_flag(arguments.flags[static_cast<size_t>(Flags::CREATE_DUMMY)], "create dummy")
+                << print_flag(arguments.flags[static_cast<size_t>(Flags::LOGFILE)], "file logging", arguments.logfile)
+                << print_flag(arguments.flags[static_cast<size_t>(Flags::UPDATE)], "update", arguments.update_script)
+                << "source:      " << arguments.source << "\n"
+                << "destination: " << arguments.dest << "\n";
+        
+        if (!arguments.get(Flags::SCRIPT)) {
+            logger << "continue? (cancel with STRG+C) ";
+            std::cin.ignore();
+        }
     }
     
 //     sf::path::format::generic_format
