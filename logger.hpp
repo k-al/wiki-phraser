@@ -24,6 +24,6 @@ public:
 
 Logger& operator<< (Logger& logger, const std::string& log);
 
-Logger operator< (Logger& logger, const std::string& log);
+Logger& operator< (Logger& logger, const std::string& log);
 
 #endif

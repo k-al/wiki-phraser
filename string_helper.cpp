@@ -1,7 +1,6 @@
 #include "string_helper.hpp"
 
 std::string chomp (const std::string& in) {
-//     bool ecased = false;
     size_t start = in.find_first_not_of(" \n\t");
     size_t end = in.find_last_not_of(" \n\t");
     end++;

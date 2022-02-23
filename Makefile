@@ -16,7 +16,7 @@ phraser.app: main.o string_helper.hpp logger.o args.o string_helper.o
 	gcc $(CFLAGS) -o phraser.app main.o logger.o args.o string_helper.o
 
 run: phraser.app
-	./phraser.app --update update.sh -vods - ./hello ./dest ./ignored
+	./phraser.app --update update.sh -vods - ./testbox ./dest
 
 clean:
 	rm *.o *.app

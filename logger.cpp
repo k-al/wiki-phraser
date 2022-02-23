@@ -45,7 +45,7 @@ Logger& operator<< (Logger& logger, const std::string& log) {
     return logger;
 }
 
-Logger operator< (Logger& logger, const std::string& log) {
+Logger& operator< (Logger& logger, const std::string& log) {
     if (logger.verbose()) {
         logger << log;
     }

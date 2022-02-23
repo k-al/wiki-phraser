@@ -106,6 +106,8 @@ Args Args::check_args (const int argc, const char** argv) {
         }
     }
     
+    //! standatize path-format (to absolute paths i guess) and check for validity (existing and permissions)
+    
     if (args.size() - i < 2) {
         std::cerr << "ERROR: too few Argumets!\n\tneeded: ./phraser [<Flags>] <Source> <Destionation>\n";
         exit(1);

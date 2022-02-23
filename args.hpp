@@ -28,6 +28,7 @@ struct Args {
     fs::path dest;
     
     Args (Logger* logger);
+    Args () = default;
     
     bool get (const Flags& flag);
     
