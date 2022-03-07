@@ -9,6 +9,12 @@ struct Entry {
     
     Entry () {};
     
+    Entry (Entry& lhs) {
+        
+    }
+    
+    Entry (Entry&& rhs) {}
+    
     bool phrased = false;
     bool directory = false;
     fs::path source;
@@ -25,6 +31,9 @@ namespace Phraser {
     
     
     void phrase_file (Entry* file) {
+        
+        
+        
         logger << "WARNING: not implemented yet\n";
     }
 
@@ -34,7 +43,7 @@ namespace Phraser {
         logger = log;
         
         //! this could be a problem:
-        std::cout << "Problem: parent from " << (fs::current_path() /= "..") << " is " << (fs::current_path() /= "..").parent_path() << '\n';
+        std::cout << "Problem: parent from " << (fs::current_path() / "..") << " is " << (fs::current_path() / "..").parent_path() << '\n';
         
         
         for (const fs::directory_entry& dir_entry : std::filesystem::recursive_directory_iterator(arguments.source)) {
@@ -56,23 +65,28 @@ namespace Phraser {
             }
             
             if (dir_entry.is_regular_file()) {
+                Entry* new_file = new Entry();
+                new_file->source = dir_entry.path();
+                new_file->destination = dest_path;
+                
+                //? maybe try it with constructor of std::pair
+                entries.insert(std::make_pair<fs::path, Entry*>(rel_path.string(), &(*new_file))); // &* is to get a new rval(&&) from the pointer (no idea why copy is not workig)
+                
+                
                 if (rel_path.extension() == ".wikiph") {
                     dest_path.replace_extension("html");
                     logger < "Is a phrasable file and will be phrased to " < dest_path < "\n";
                     
-                    Entry* new_file = new Entry();
-                    new_file->source = dir_entry.path();
-                    new_file->destination = dest_path;
-                    
                     phrase_file(new_file);
                     
-                    entries.insert(std::make_pair<fs::path, Entry*>(rel_path.string(), &(*new_file)));
                 } else {
+                    logger < "is '" < rel_path.extension() < "' file and will be copied to " < dest_path < "\n";
                     if (rel_path.extension() == ".txt") {
-                        logger < "Is a .txt file and will be copied to " < dest_path < "\nWARNING: Do you really want a .txt on your website?\n";
-                    } else {
-                        logger < "is '" < rel_path.extension() < "' file and will be copied to " < dest_path < "\n";
+                        logger < "WARNING: Do you really want a .txt on your website?\n";
                     }
+                    
+                    
+                    
                     fs::directory_entry dest_entry(dest_path);
                     if (dest_entry.exists()) {
                         logger < "Destination file allready exists";
@@ -93,6 +107,7 @@ namespace Phraser {
                         fs::copy_file(dir_entry.path(), dest_path);
                     }
                 }
+                
             } else {
                 logger << "WARNING: Can't handle " << dir_entry.path() << "\n \t Softlinks are not supported.\n";
             }
