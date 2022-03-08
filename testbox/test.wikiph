@@ -11,6 +11,6 @@ Fünti
 
 [Die Gruppe]$list{[$tags{gruppe}]$linknames{/sc/}}
 
-$time{$tag{time}}
+$time{}
 
-[mandrio]$link{/sc/mandrio}
+$time{1137, 04, 00}
