@@ -25,6 +25,21 @@ struct Entry {
     std::unordered_set<std::string> links; // set of paths that Entry links to
     std::unordered_map<std::string, std::vector<std::string>> tags;
     std::array<std::string, static_cast<size_t>(Block::number)> content;
+
+    void reset_content (Block block) {
+        if (block != Block::number) {
+            this->content[static_cast<size_t>(block)].clear();
+        }
+    }
+
+    void write_content (std::string& content, Block to) {
+        if (to == Block::number) {
+            // logger << "WARNING: writing to unspecified block in file " << source << "\n"; // kein zugriff auf logger
+            return;
+        }
+
+        std::swap(this->content[static_cast<size_t>(to)], content);
+    }
 };
 
 std::unordered_map<std::string, Entry*> Entry::linkNames;
@@ -137,56 +152,84 @@ namespace Phraser {
         logger << "\nWARNING: not implemented yet\n";
     }
 
+    // TODO: write content in einem stück
+    std::string checkCommands(Entry* file, std::string buff, size_t open, size_t close) {
+        size_t pos = open;
+
+        while (pos > close) {
+            Entry::Block start = Entry::Block::number;
+            size_t first_command = buff.find_first_of('$', pos);
+
+            if (first_command == std::string::npos) {
+                break;
+            }
+            // Build Html content
+            std::string command = buff.substr(first_command + 1, buff.find_first_of('{', first_command) - first_command - 1);
+            if(command == "start") {
+                size_t open = buff.find_first_of('{', first_command);
+                std::string block = buff.substr(open + 1, match_brackets(buff, open) - open - 1);
+                //file->reset_content(start);
+                start = block == "main" ? Entry::Block::Main : Entry::Block::Side;
+            } else if (command == "time") {
+                size_t open = buff.find_first_of('{', first_command);
+                std::string time_str = buff.substr(open + 1, match_brackets(buff, open) - open - 1);
+                if (chomp(time_str).empty()) {
+                    //if ()
+                    //time_str
+                }
+            } else if (command == "subsection") {
+                size_t open = buff.find_first_of('[', first_command);
+                size_t close = match_brackets(buff, open);
+                std::string title = buff.substr(open + 1, close - open - 1);
+                file->write_content("<h2>" + title + "</h2>\n", start);
+                open = buff.find_first_of('{', close);
+                close = match_brackets(buff, open);
+                std::string content = buff.substr(open + 1, close - open - 1);
+                file->write_content("<p>" + checkCommands(file, content, open, close) + "<p>", start);
+            } else if (command == "list") {
+                size_t open = buff.find_first_of('[', first_command);
+                size_t close = match_brackets(buff, open);
+                std::string title = buff.substr(open + 1, close - open - 1);
+                file->write_content("<h3>" + title + "</h3>\n", start);
+                open = buff.find_first_of('{', close);
+                close = match_brackets(buff, open);
+                std::string content = buff.substr(open + 1, close - open - 1);
+                file->write_content("<p>" + checkCommands(file, content, open, close) + "<p>", start);
+            } else if (command == "tags") {
+
+            } else if (command == "linknames") {
+
+            } else {
+                logger < "ERROR: Command not found!";
+                exit(1);
+            }
+            pos = ++first_command;
+            /* $subsection
+             * $list
+             * $start
+             * $linknames
+             * $time
+             * $tags
+             */
+
+        }
+        return ";";
+    }
+
     /**
      *
      */
     void phrase_commands() {
 
-        size_t pos = 0;
-        Entry::Block write = Entry::Block::number;
-
         // second iteration over entries for the commands
         for (auto it : entries) {
-            pos = 0;
             // if not wikiph: skip
             if (!it.second->phrased) {
                 continue;
             }
             const std::string buff = it.second->content[0];
-            while (true) {
-                size_t first_command = buff.find_first_of('$', pos);
 
-                if (first_command == std::string::npos) {
-                    break;
-                }
-                // Build Html content
-                std::string command = buff.substr(first_command + 1, buff.find_first_of('{', first_command) - first_command - 1);
-                if(command == "start") {
-
-                } else if (command == "time") {
-
-                } else if (command == "subsection") {
-
-                } else if (command == "list") {
-
-                } else if (command == "tags") {
-
-                } else if (command == "linknames") {
-
-                } else {
-                    logger < "ERROR: Command not found!";
-                    exit(1);
-                }
-                pos = ++first_command;
-                /* $subsection
-                 * $list
-                 * $start
-                 * $linknames
-                 * $time
-                 * $tags
-                 */
-
-            }
+            checkCommands(it.second, buff, 0, buff.size() - 1);
 
             logger << it.first;
         }

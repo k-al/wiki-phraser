@@ -55,3 +55,30 @@ std::vector<std::string> split(const std::string& s, char splitChar) {
     }
     return subsets;
 }
+
+/**
+ *
+ * @param string
+ * @param start_bracket
+ * @return position of the closing bracket
+ */
+size_t match_brackets (const std::string& string, size_t start_bracket) {
+    char end_b;
+    const char start_b = string.at(start_bracket);
+    if (start_b == '{') {
+        end_b = '}';
+    } else if(start_b == '[') {
+        end_b = ']';
+    }
+
+    size_t pos = start_bracket;
+    size_t open = string.find_first_of(start_b, pos + 1);
+    size_t close = string.find_first_of(end_b, pos + 1);
+
+    while (open < close) {
+        pos = match_brackets(string, open);
+        open = string.find_first_of(start_b, pos + 1);
+        close = string.find_first_of(end_b, pos + 1);
+    }
+    return close;
+}

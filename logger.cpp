@@ -35,7 +35,6 @@ std::string Logger::format_flag (const bool& flag, const std::string& flag_name,
     return static_cast<std::string>("[") + (flag ? "x" : " ") + "] " + flag_name + ((flag && flag_parameter != "") ? ("\t -> " + flag_parameter + "\n") : "\n");
 };
 
-
 Logger& operator<< (Logger& logger, const std::string& log) {
     if (logger.to_file()) {
         //! get file-handle from Logger and start writing
