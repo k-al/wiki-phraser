@@ -32,7 +32,7 @@ struct Entry {
         }
     }
 
-    void write_content (std::string& content, Block to) {
+    void write_content (std::string content, Block to) {
         if (to == Block::number) {
             // logger << "WARNING: writing to unspecified block in file " << source << "\n"; // kein zugriff auf logger
             return;
