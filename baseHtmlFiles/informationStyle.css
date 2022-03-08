@@ -1,0 +1,21 @@
+body {
+    margin: 20px;
+    height: 100%;
+}
+
+a { color: #aaaaaa; }
+a:hover { color: #dddddd; }
+a:visited { color: #aaaaaa; }
+
+.characterPic {
+    position: relative;
+    width: 300px;
+    left: 20px;
+    height: auto;
+}
+
+.spacer {
+    width: 320px;
+    height: fit-content;
+    float: right;
+}
