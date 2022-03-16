@@ -26,20 +26,19 @@ struct Entry {
     std::unordered_map<std::string, std::vector<std::string>> tags;
     std::array<std::string, static_cast<size_t>(Block::number)> content;
 
-    void reset_content (Block block) {
+    void set_content (std::string content, Block block) {
         if (block != Block::number) {
-            this->content[static_cast<size_t>(block)].clear();
+            this->content[static_cast<size_t>(block)].swap(content);
         }
     }
 
-    void write_content (std::string content, Block to) {
-        if (to == Block::number) {
-            // logger << "WARNING: writing to unspecified block in file " << source << "\n"; // kein zugriff auf logger
-            return;
-        }
-
-        std::swap(this->content[static_cast<size_t>(to)], content);
-    }
+    //void write_content (std::string content, Block to) {
+    //    if (to == Block::number) {
+    //        // logger << "WARNING: writing to unspecified block in file " << source << "\n"; // kein zugriff auf logger
+    //        return;
+    //    }
+    //    std::swap(this->content[static_cast<size_t>(to)], content);
+    //}
 };
 
 std::unordered_map<std::string, Entry*> Entry::linkNames;
@@ -153,11 +152,17 @@ namespace Phraser {
     }
 
     // TODO: write content in einem stück
-    std::string checkCommands(Entry* file, std::string buff, size_t open, size_t close) {
+    std::string checkCommands(Entry* file, Entry::Block start, std::string buff, size_t open, size_t close, bool list) {
         size_t pos = open;
+        std::string content = "";
 
+        if(list) {
+            content += "<ul>\n";
+        }
         while (pos > close) {
-            Entry::Block start = Entry::Block::number;
+            if(list) {
+                content += "<li>\n";
+            }
             size_t first_command = buff.find_first_of('$', pos);
 
             if (first_command == std::string::npos) {
@@ -168,37 +173,88 @@ namespace Phraser {
             if(command == "start") {
                 size_t open = buff.find_first_of('{', first_command);
                 std::string block = buff.substr(open + 1, match_brackets(buff, open) - open - 1);
-                //file->reset_content(start);
+                file->set_content(content, start);
                 start = block == "main" ? Entry::Block::Main : Entry::Block::Side;
             } else if (command == "time") {
                 size_t open = buff.find_first_of('{', first_command);
                 std::string time_str = buff.substr(open + 1, match_brackets(buff, open) - open - 1);
+                std::string yer, mon, day;
                 if (chomp(time_str).empty()) {
-                    //if ()
-                    //time_str
+                    try {
+                        yer = file->tags.at("time").at(0);
+                        mon = file->tags.at("time").at(1);
+                        day = file->tags.at("time").at(2);
+                    } catch (const std::out_of_range& oor) {
+                        logger << "failed to find time tag\n\t" << oor.what();
+                    }
+                } else {
+                    yer = chomp(time_str.substr(open + 1, time_str.find_first_of(',') - 1));
+                    mon = chomp(time_str.substr(time_str.find_first_of(',') + 1, time_str.find_last_of(',') - time_str.find_first_of(',') - 1));
+                    day = chomp(time_str.substr(time_str.find_last_of(',') + 1));
                 }
+                content += "<h3>" + day == "00" ? "__" : day + "." + mon + "." + yer + "</h3><br>\n";
             } else if (command == "subsection") {
                 size_t open = buff.find_first_of('[', first_command);
                 size_t close = match_brackets(buff, open);
                 std::string title = buff.substr(open + 1, close - open - 1);
-                file->write_content("<h2>" + title + "</h2>\n", start);
+                content += "<h2>" + title + "</h2><br>\n";
                 open = buff.find_first_of('{', close);
                 close = match_brackets(buff, open);
                 std::string content = buff.substr(open + 1, close - open - 1);
-                file->write_content("<p>" + checkCommands(file, content, open, close) + "<p>", start);
+                content += "<p>" + checkCommands(file, start, content, open, close, false) + "<p><br>\n";
             } else if (command == "list") {
                 size_t open = buff.find_first_of('[', first_command);
                 size_t close = match_brackets(buff, open);
                 std::string title = buff.substr(open + 1, close - open - 1);
-                file->write_content("<h3>" + title + "</h3>\n", start);
+                content += "<h3>" + title + "</h3><br>\n";
                 open = buff.find_first_of('{', close);
                 close = match_brackets(buff, open);
                 std::string content = buff.substr(open + 1, close - open - 1);
-                file->write_content("<p>" + checkCommands(file, content, open, close) + "<p>", start);
+                content += "<p>" + checkCommands(file, start, content, open, close, true) + "<p><br>\n";
             } else if (command == "tags") {
-
+                size_t open = buff.find_first_of('{', first_command);
+                size_t close = match_brackets(buff, open);
+                std::string title = buff.substr(open + 1, close - open - 1);
+                content += "<ul>\n";
+                for (std::string tag : file->tags.at(title)) {
+                    content += "<li>" + tag + "</li>\n";
+                }
+                content += "</ul><br>\n";
             } else if (command == "linknames") {
+                size_t open = buff.find_first_of('[', first_command);
+                size_t close = match_brackets(buff, open);
+                std::string links = buff.substr(open + 1, close - open - 1);
 
+                size_t cmd = links.find_first_of('$');
+                if(cmd == -1) {
+                    int cmd = links.find_first_of(',');
+                    if(cmd == -1) {
+                        if(file->linkNames.count(links) == 1) {
+                            content += "<a href=\"" + file->linkNames.at(links)->destination.string() + "\">" + links + "</a>";
+                        } else {
+                            // TODO: Error message
+                        }
+                    } else {
+                        for (std::string link : split(links, ',')) {
+                            if(file->linkNames.count(link) == 1) {
+                                content += "<a href=\"" + file->linkNames.at(link)->destination.string() + "\">" + link + "</a>";
+                            } else {
+                                // TODO: Error message
+                            }
+                        }
+                    }
+                } else if (links.find("$tags") != std::string::npos) {
+                    for (std::string link: file->tags.at(links.substr(links.find_first_of('{') + 1,
+                                                                      links.find_last_of('}') -
+                                                                      links.find_first_of('{') - 1))) {
+                        if (file->linkNames.count(link) == 1) {
+                            content += "<a href=\"" + file->linkNames.at(link)->destination.string() + "\">" + link + "</a>";
+                        } else {
+                            logger << YELLOW << "WARNING: Link to " << link << " not found" << RESET;
+                            content += link;
+                        }
+                    }
+                }
             } else {
                 logger < "ERROR: Command not found!";
                 exit(1);
@@ -211,9 +267,14 @@ namespace Phraser {
              * $time
              * $tags
              */
-
+            if(list) {
+                content += "</li>\n";
+            }
         }
-        return ";";
+        if(list) {
+            content += "</ul>\n";
+        }
+        return content;
     }
 
     /**
@@ -229,7 +290,7 @@ namespace Phraser {
             }
             const std::string buff = it.second->content[0];
 
-            checkCommands(it.second, buff, 0, buff.size() - 1);
+            checkCommands(it.second, Entry::Block::number, buff, 0, buff.size() - 1, false);
 
             logger << it.first;
         }
@@ -289,7 +350,7 @@ namespace Phraser {
                 } else {
                     logger < "is '" < rel_path.extension() < "' file and will be copied to " < dest_path < "\n";
                     if (rel_path.extension() == ".txt") {
-                        logger < "WARNING: Do you really want a .txt on your website?\n";
+                        logger < YELLOW < "WARNING: Do you really want a .txt on your website?\n" < RESET;
                     }
 
                     fs::directory_entry dest_entry(dest_path);

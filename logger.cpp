@@ -4,8 +4,6 @@
 
 namespace fs = std::filesystem;
 
-
-
 #include "logger.hpp"
 
 #include "args.hpp"

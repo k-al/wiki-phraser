@@ -23,6 +23,40 @@ bool Args::get (const Flags& flag) {
     return this->flags[static_cast<size_t>(flag)];
 }
 
+void print_help () {
+    std::cout << "./phraser [<FLAGS>] [-] <source> <destination>\n\n"
+              << "Flags:\n"
+              << "-v\n\tverbose mode\n\n"
+              << "-h\n\tshow this help\n\n";
+
+    exit(0);
+}
+
+/*
+ * try to find the specified file and throws if it can't access them
+ * if @param{input} = false it tries to create the file in the specified path
+ */
+void check_file (fs::path path, bool input = true) {
+    fs::directory_entry file(path);
+
+
+    if (input) {
+        try {
+            std::ifstream stream(path, std::ios_base::in);
+            stream.close();
+        } catch (std::system_error e) {
+            throw "can't read the File >" + path.string() + "< \n\t" + e.what();
+        }
+    } else {
+        try {
+            std::ofstream stream (path, std::ios_base::app);
+            stream.close();
+        } catch (std::system_error e) {
+            throw "can't write the File >" + path.string() + "< \n\t" + e.what();
+        }
+    }
+}
+
 Args Args::check_args (const int argc, const char** argv) {
     
     Args arguments(Args::logger);
@@ -58,6 +92,22 @@ Args Args::check_args (const int argc, const char** argv) {
                     } else {
                         std::cerr << "WARNIG: word-flag '--update' was used, but no update script was specified!\n  continuing by ignoring the flag.\n";
                     }
+                } else if (flag == "log") {
+                    if ((i+1) < args.size() && args[i+1][0] != '-') {
+                        i++;
+                        arguments.flags[static_cast<size_t>(Flags::LOGFILE)] = true;
+                        arguments.logfile = chomp(args[i]);
+                    } else {
+                        std::cerr << "WARNIG: word-flag '--log' was used, but no log file was specified!\n  continuing by ignoring the flag.\n";
+                    }
+                } else if (flag == "log") {
+                    if ((i+1) < args.size() && args[i+1][0] != '-') {
+                        i++;
+                        arguments.flags[static_cast<size_t>(Flags::LOGFILE)] = true;
+                        arguments.logfile = chomp(args[i]);
+                    } else {
+                        std::cerr << "WARNIG: word-flag '--log' was used, but no log file was specified!\n  continuing by ignoring the flag.\n";
+                    }
                 }
             } else { // the -f flags
                 for (int j = 1; j < akt_arg->length(); j++) {
@@ -89,12 +139,7 @@ Args Args::check_args (const int argc, const char** argv) {
                             break;
                         
                         case 'h':
-                            std::cout << "./phraser [<FLAGS>] [-] <source> <destination>\n\n"
-                                        << "Flags:\n"
-                                        << "-v\n\tverbose mode\n\n"
-                                        << "-h\n\tshow this help\n\n";
-                                        
-                            exit(0);
+                            print_help();
                         
                         default:
                             std::cerr << "WARNIG: invalide single-char flag '-" << (*akt_arg)[j] << "' is ignored!\n";
