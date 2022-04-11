@@ -109,7 +109,7 @@ namespace Phraser {
                 first_tag = buff.find_first_of(":", position);
 
                 if (first_command == std::string::npos) {
-                    logger << "\nERROR: no content section\n";
+                    logger << RED << "ERROR: no content section\n" << RESET;
                     //? instead of exiting, continue with next file
                     exit(1);
                 } else if (first_tag < first_command) {
@@ -143,7 +143,8 @@ namespace Phraser {
                     } else if (is_at(buff, first_command + 1, "no_default_linknames")) {
                         default_linknames = false;
                     } else {
-                        logger << "\nERROR: incorrect command in meta-section >$" << buff.substr(first_command, buff.find_first_not_of(strhelp::word_chars, first_command) - first_command) << "<\n";
+                        logger << RED << "ERROR: incorrect command in meta-section:" << RESET
+                               << " >$" << buff.substr(first_command, buff.find_first_not_of(strhelp::word_chars, first_command) - first_command) << "<\n";
                         //? instead of exiting, continue with next file
                         exit(1);
                     }
@@ -151,7 +152,9 @@ namespace Phraser {
             }
             
             if (default_linknames) {
-                file->linkNames.insert(std::pair<std::string, Entry*>(to_lower(file->source.stem()), file));
+                if (file->source.stem() != "index") {
+                    file->linkNames.insert(std::pair<std::string, Entry*>(to_lower(file->source.stem()), file));
+                }
                 try {
                     file->linkNames.insert(std::pair<std::string, Entry*>(to_lower(file->tags.at("title").at(0)), file));
                 } catch (const std::out_of_range& oor) { /* ignored */}
@@ -161,6 +164,81 @@ namespace Phraser {
         return;
     }
     
+    std::string phrase_text_context (Entry* file, std::string buff, size_t start, size_t end, size_t level) {
+        
+        if (end == std::string::npos)
+            end = buff.size();
+        
+        if (start >= end)
+            return "";
+        
+        size_t pos = start;
+        std::string content = "";
+        Entry::Block active_block = Entry::Block::number;
+
+        while (true) {
+            { // get the new position
+                size_t new_pos = end;
+                
+                size_t first_occ = buff.find_first_of('$', pos);
+                new_pos = new_pos < first_occ ? new_pos : first_occ;
+                
+                first_occ = buff.find_first_of('\n', pos);
+                new_pos = new_pos < first_occ ? new_pos : first_occ;
+                
+                if (pos != new_pos) {
+                    //? maybe code a string builder with vector as base for better memory management at growing strings
+                    content += buff.substr(pos, new_pos - pos);
+                }
+                
+                pos = new_pos;
+            }
+            
+            if (pos == end) {
+                return content;
+            }
+            
+            if (buff[pos] == '\n') {
+                content += "</br>\n";
+                pos++;
+            } else if (buff[pos] == '$') {
+                pos++;
+                if (is_at(buff, pos, "start")) {
+                    pos += 5;
+                    
+                    file->set_content(content, active_block);
+                    
+                    if (active_block == Entry::Block::number && content.size() != 0) {
+                        logger << YELLOW << "WARNING: broken file " << file->source.string() << " is writing unspecified content block" << RESET << "\n\thow did you do that?\n"
+                               < "\ndiscarded content:\n" < content;
+                    }
+                    
+                    if (buff[pos] == ' ' || buff[pos] == '\n' || buff[pos] == '\t') {
+                        active_block = Entry::Block::Main;
+                    } else if (is_at(buff, pos, "{}")) {
+                        pos += 2;
+                        active_block = Entry::Block::Main;
+                    } else if (is_at(buff, pos, "{main}")) {
+                        pos += 6;
+                        active_block = Entry::Block::Main;
+                    } else if (is_at(buff, pos, "{side}")) {
+                        pos += 6;
+                        active_block = Entry::Block::Side;
+                    } else {
+                        logger << RED << "invalide $start command at " << file->source.string() << RESET;
+                        exit(1);
+                    }
+                } else if (is_at(buff, pos, "")) {
+                    
+                }
+                
+            } else {
+                logger << RED << "\nSomething went horribly wrong!\n was looking for '$' or '\\n', but got neither(" << ("" + buff[pos]) << ")\n" << RESET;
+                exit(1);
+            }
+        }
+            
+    }
 
     // TODO: write content in einem stück
     std::string checkCommands(Entry* file, Entry::Block start, std::string buff, size_t open, size_t close, bool list) {
