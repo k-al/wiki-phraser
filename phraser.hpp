@@ -1,47 +1,7 @@
 
 
-struct Entry {
-    enum class Block {
-        Main = 0,
-        Side,
-        number
-    };
-    
-    Entry () {};
-    
-    Entry (Entry& lhs) {
-        
-    }
-
-    Entry (Entry&& rhs) {}
-
-    static std::unordered_multimap<std::string, Entry*> linkNames;
 
 
-    bool phrased = false;
-    bool directory = false;
-    fs::path source;
-    fs::path destination;
-    std::unordered_set<std::string> links; // set of paths that Entry links to
-    std::unordered_map<std::string, std::vector<std::string>> tags;
-    std::array<std::string, static_cast<size_t>(Block::number)> content;
-
-    void set_content (std::string& content, Block block) {
-        if (block != Block::number) {
-            this->content[static_cast<size_t>(block)].swap(content);
-        }
-    }
-
-    //void write_content (std::string content, Block to) {
-    //    if (to == Block::number) {
-    //        // logger << "WARNING: writing to unspecified block in file " << source << "\n"; // no access to logger
-    //        return;
-    //    }
-    //    std::swap(this->content[static_cast<size_t>(to)], content);
-    //}
-};
-
-std::unordered_multimap<std::string, Entry*> Entry::linkNames;
 
 namespace Phraser {
 
@@ -61,10 +21,50 @@ namespace Phraser {
 
 
 
-    static std::unordered_map<std::string, Entry*> entries;
     static Args arguments;
     static Logger logger;
+    
+    
+    
+    struct Entry {
+        enum class Block {
+            Main = 0,
+            Side,
+            number
+        };
+        
+        Entry () {};
+        
+        Entry (Entry& lhs) {
+            
+        }
 
+        Entry (Entry&& rhs) {}
+
+        static std::unordered_multimap<std::string, Entry*> linkNames;
+
+
+        bool phrased = false;
+        bool directory = false;
+        fs::path source;
+        fs::path destination;
+        std::unordered_set<std::string> links; // set of paths that Entry links to
+        std::unordered_map<std::string, std::vector<std::string>> tags;
+        std::array<std::string, static_cast<size_t>(Block::number)> content;
+
+        void set_content (std::string& content, Block block) {
+            if (block != Block::number) {
+                this->content[static_cast<size_t>(block)].swap(content);
+            } else {
+                Phraser::logger << "NOOOOOO...\n";
+            }
+        }
+    };
+    std::unordered_multimap<std::string, Entry*> Entry::linkNames;
+    
+    static std::unordered_map<std::string, Entry*> entries;
+    
+    
     /**
      * Computes the tags of the given wikiph file and places them in the Entry\n
      * @param file the Entry to store the data in
@@ -79,7 +79,7 @@ namespace Phraser {
      * also places the command section in content at pos 0
      * @param file the file Entry to phrase
      */
-    void phrase_tags (Entry* file) {
+    void process_meta_single (Entry* file) {
         // read baseHtmlFiles
         // std::ifstream baseLayout;
         // baseLayout.open(fs::path("baseHtmlFiles/baseLayout.html"));
@@ -109,7 +109,7 @@ namespace Phraser {
                 first_tag = buff.find_first_of(":", position);
 
                 if (first_command == std::string::npos) {
-                    logger << RED << "ERROR: no content section\n" << RESET;
+                    logger << RED << "ERROR: no content section in " << file->source.string() << "\n" << RESET << "\tforgot $start command?\n";
                     //? instead of exiting, continue with next file
                     exit(1);
                 } else if (first_tag < first_command) {
@@ -136,14 +136,13 @@ namespace Phraser {
 
                     position = first_tag + 1;
                 } else {
-                    first_command++;
-                    if (buff.substr(first_command, 5) == "start") {
+                    if (is_at(buff, first_command + 1, "start")) {
                         file->content[0] = buff.substr(first_command);
                         break;
                     } else if (is_at(buff, first_command + 1, "no_default_linknames")) {
                         default_linknames = false;
                     } else {
-                        logger << RED << "ERROR: incorrect command in meta-section:" << RESET
+                        logger << RED << "ERROR: incorrect command in meta-section in " << file->source.string() << ":" << RESET
                                << " >$" << buff.substr(first_command, buff.find_first_not_of(strhelp::word_chars, first_command) - first_command) << "<\n";
                         //? instead of exiting, continue with next file
                         exit(1);
@@ -164,17 +163,93 @@ namespace Phraser {
         return;
     }
     
-    std::string phrase_text_context (Entry* file, std::string buff, size_t start, size_t end, size_t level) {
-        
+    
+    /**
+     * scans dirs for files to phrase images to copy...\n
+     * executes process_meta_single on all phrasable files to build up the entry data structure
+     */
+    void process_meta () {
+        for (const fs::directory_entry& dir_entry : std::filesystem::recursive_directory_iterator(arguments.source)) {
+            fs::path rel_path = dir_entry.path().lexically_relative(arguments.source);
+            fs::path dest_path = (arguments.dest / rel_path).lexically_normal();
+            
+            logger < "\n\nFile: " < dir_entry.path() < "\n  relative Path: " < rel_path.string() < "\n  constructed destination Path: " < dest_path.string() < "\n";
+            
+            
+            if (dir_entry.is_directory()) {
+                // check the directory in the destination folder and create it if absent
+                
+                if (fs::create_directory(dest_path)) {
+                    logger < "Is directory and gets copied to " < dest_path < "\n";
+                } else {
+                    logger < "Is directory and is allready present as " < dest_path < "\n";
+                }
+                
+                //! make Entry which is later linked to right index
+                
+                continue;
+            }
+            
+            if (dir_entry.is_regular_file()) {
+                Entry* new_file = new Entry();
+                new_file->source = dir_entry.path();
+                new_file->destination = dest_path;
+
+
+                entries.insert(std::pair<fs::path, Entry*>(rel_path.string(), new_file));
+                
+                
+                if (rel_path.extension() == ".wikiph") {
+                    dest_path.replace_extension("html");
+                    new_file->destination = dest_path; // update struct
+                    new_file->phrased = true;
+                    logger < "Is a phrasable file and will be phrased to " < dest_path < "\n";
+                    
+                    process_meta_single(new_file);
+                    
+                } else {
+                    logger < "is '" < rel_path.extension() < "' file and will be copied to " < dest_path < "\n";
+                    if (rel_path.extension() == ".txt") {
+                        logger < YELLOW < "WARNING: Do you really want a .txt on your website?\n" < RESET;
+                    }
+
+                    fs::directory_entry dest_entry(dest_path);
+                    if (dest_entry.exists()) {
+                        logger < "Destination file allready exists";
+                        if (arguments.get(Flags::OVERRIDE)) {
+                            logger < ", but overwrite it because of the '-o' Flag\n";
+                            fs::copy_file(dir_entry.path(), dest_path, fs::copy_options::overwrite_existing);
+                        } else {
+                            fs::file_time_type dest_time = dest_entry.last_write_time();
+                            fs::file_time_type source_time = dir_entry.last_write_time();
+                            if (dest_time < source_time) {
+                                logger < ", but overwrite it because it needs an update\n";
+                                fs::copy_file(dir_entry.path(), dest_path, fs::copy_options::overwrite_existing);
+                            } else {
+                                logger < " and is up to date\n";
+                            }
+                        }
+                    }  else {
+                        fs::copy_file(dir_entry.path(), dest_path);
+                    }
+                }
+                
+            } else {
+                logger << "WARNING: Can't handle " << dir_entry.path() << "\n \t Softlinks (for example) are not supported.\n";
+            }
+        }
+    }
+    
+    
+    std::string process_command_text (Entry* file, const std::string& buff, size_t& pos, size_t end, size_t level) {
         if (end == std::string::npos)
             end = buff.size();
         
-        if (start >= end)
+        if (pos >= end)
             return "";
         
-        size_t pos = start;
         std::string content = "";
-        Entry::Block active_block = Entry::Block::number;
+        
 
         while (true) {
             { // get the new position
@@ -198,37 +273,23 @@ namespace Phraser {
                 return content;
             }
             
-            if (buff[pos] == '\n') {
+            if (buff[pos] == '\n') { // replace all '\n' to "<\br>\n"
                 content += "</br>\n";
                 pos++;
-            } else if (buff[pos] == '$') {
-                pos++;
-                if (is_at(buff, pos, "start")) {
-                    pos += 5;
-                    
-                    file->set_content(content, active_block);
-                    
-                    if (active_block == Entry::Block::number && content.size() != 0) {
-                        logger << YELLOW << "WARNING: broken file " << file->source.string() << " is writing unspecified content block" << RESET << "\n\thow did you do that?\n"
-                               < "\ndiscarded content:\n" < content;
-                    }
-                    
-                    if (buff[pos] == ' ' || buff[pos] == '\n' || buff[pos] == '\t') {
-                        active_block = Entry::Block::Main;
-                    } else if (is_at(buff, pos, "{}")) {
-                        pos += 2;
-                        active_block = Entry::Block::Main;
-                    } else if (is_at(buff, pos, "{main}")) {
-                        pos += 6;
-                        active_block = Entry::Block::Main;
-                    } else if (is_at(buff, pos, "{side}")) {
-                        pos += 6;
-                        active_block = Entry::Block::Side;
+            } else if (buff[pos] == '$') { // found command
+                
+                // start command starts the next section, so return the gathered content
+                if (is_at(buff, pos + 1, "start")) {
+                    if (level == 0) {
+                        return content;
                     } else {
-                        logger << RED << "invalide $start command at " << file->source.string() << RESET;
+                        logger << RED << "broken file " << file->source.string() << "!\n" << RESET << "\tgot $strat command not on top level\n";
                         exit(1);
                     }
-                } else if (is_at(buff, pos, "")) {
+                }
+                
+                pos++;
+                if (is_at(buff, pos, "")) { 
                     
                 }
                 
@@ -238,6 +299,51 @@ namespace Phraser {
             }
         }
             
+    }
+    
+    void process_command () {
+        for (std::pair<std::string, Entry*> it : entries) {
+            // if not wikiph: skip
+            if (!it.second->phrased) {
+                continue;
+            }
+            std::string buff;
+            buff.swap(it.second->content[0]);
+            
+            size_t pos = 0;
+            
+            while (pos < buff.size()) {
+                if (!is_at(buff, pos, "$start")) {
+                    logger << RED << "broken file " << it.second->source.string() << "!\n" << RESET << "\texpectet >$start< but got >" << buff.substr(pos, 6) << "<\n";
+                    exit(1);
+                }
+                pos += 6;
+                Entry::Block active_block;
+                
+                
+                if (buff[pos] == ' ' || buff[pos] == '\n' || buff[pos] == '\t') {
+                    active_block = Entry::Block::Main;
+                } else if (is_at(buff, pos, "{}")) {
+                    pos += 2;
+                    active_block = Entry::Block::Main;
+                } else if (is_at(buff, pos, "{main}")) {
+                    pos += 6;
+                    active_block = Entry::Block::Main;
+                } else if (is_at(buff, pos, "{side}")) {
+                    pos += 6;
+                    active_block = Entry::Block::Side;
+                } else {
+                    logger << RED << "invalide $start command at " << it.second->source.string() << RESET << "\n";
+                    exit(1);
+                }
+                
+                std::string content = process_command_text(it.second, buff, pos, buff.size(), 0);
+                
+                it.second->set_content(content, active_block);
+                
+                logger << it.first;
+            }
+        }
     }
 
     // TODO: write content in einem stück
@@ -366,107 +472,21 @@ namespace Phraser {
         return content;
     }
 
-    /**
-     *
-     */
-    void phrase_commands() {
-
-        // second iteration over entries for the commands
-        for (auto it : entries) {
-            // if not wikiph: skip
-            if (!it.second->phrased) {
-                continue;
-            }
-            const std::string buff = it.second->content[0];
-
-            checkCommands(it.second, Entry::Block::number, buff, 0, buff.size() - 1, false);
-
-            logger << it.first;
-        }
-    }
-
-    /**
-     * the main of the phraser\n
-     * scans dirs for files to phrase images to copy...\n
-     * executes phrase_file to phrase the wikiph files
-     * @param args
-     * @param log
-     */
+    
+    
     void phraser_main (Args args, Logger log) {
-        
         arguments = args;
         logger = log;
         
         //! this could be a problem:
         std::cout << "Problem: parent from " << (fs::current_path() / "..") << " is " << (fs::current_path() / "..").parent_path() << '\n';
-
         
-        for (const fs::directory_entry& dir_entry : std::filesystem::recursive_directory_iterator(arguments.source)) {
-            fs::path rel_path = dir_entry.path().lexically_relative(arguments.source);
-            fs::path dest_path = (arguments.dest / rel_path).lexically_normal();
-            
-            logger < "\n\nFile: " < dir_entry.path() < "\n  relative Path: " < rel_path.string() < "\n  constructed destination Path: " < dest_path.string() < "\n";
-            
-            
-            if (dir_entry.is_directory()) {
-                // check the directory in the destination folder and create it if absent
-                
-                if (fs::create_directory(dest_path)) {
-                    logger < "Is directory and gets copied to " < dest_path < "\n";
-                } else {
-                    logger < "Is directory and is allready present as " < dest_path < "\n";
-                }
-                continue;
-            }
-            
-            if (dir_entry.is_regular_file()) {
-                Entry* new_file = new Entry();
-                new_file->source = dir_entry.path();
-                new_file->destination = dest_path;
-
-
-                entries.insert(std::pair<fs::path, Entry*>(rel_path.string(), new_file));
-                
-                
-                if (rel_path.extension() == ".wikiph") {
-                    dest_path.replace_extension("html");
-                    new_file->destination = dest_path; // update struct
-                    new_file->phrased = true;
-                    logger < "Is a phrasable file and will be phrased to " < dest_path < "\n";
-                    
-                    phrase_tags(new_file);
-                    
-                } else {
-                    logger < "is '" < rel_path.extension() < "' file and will be copied to " < dest_path < "\n";
-                    if (rel_path.extension() == ".txt") {
-                        logger < YELLOW < "WARNING: Do you really want a .txt on your website?\n" < RESET;
-                    }
-
-                    fs::directory_entry dest_entry(dest_path);
-                    if (dest_entry.exists()) {
-                        logger < "Destination file allready exists";
-                        if (arguments.get(Flags::OVERRIDE)) {
-                            logger < ", but overwrite it because of the '-o' Flag\n";
-                            fs::copy_file(dir_entry.path(), dest_path, fs::copy_options::overwrite_existing);
-                        } else {
-                            fs::file_time_type dest_time = dest_entry.last_write_time();
-                            fs::file_time_type source_time = dir_entry.last_write_time();
-                            if (dest_time < source_time) {
-                                logger < ", but overwrite it because it needs an update\n";
-                                fs::copy_file(dir_entry.path(), dest_path, fs::copy_options::overwrite_existing);
-                            } else {
-                                logger < " and is up to date\n";
-                            }
-                        }
-                    }  else {
-                        fs::copy_file(dir_entry.path(), dest_path);
-                    }
-                }
-                
-            } else {
-                logger << "WARNING: Can't handle " << dir_entry.path() << "\n \t Softlinks are not supported.\n";
-            }
-        }
-        phrase_commands();
+        // read all files, build up the entry structure
+        process_meta();
+        
+        // core phraser processing all the commands
+        process_command();
+        
+        
     }
 }
