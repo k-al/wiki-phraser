@@ -3,6 +3,7 @@
 #define LOGGER_GUARD
 
 
+//! use operator overloading instead of defined constants
 #define RED "\033[1;31m"
 #define YELLOW "\033[1;33m"
 #define GREEN "\033[1;32m"

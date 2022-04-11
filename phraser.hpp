@@ -15,7 +15,7 @@ struct Entry {
 
     Entry (Entry&& rhs) {}
 
-    static std::unordered_map<std::string, Entry*> linkNames;
+    static std::unordered_multimap<std::string, Entry*> linkNames;
 
 
     bool phrased = false;
@@ -26,7 +26,7 @@ struct Entry {
     std::unordered_map<std::string, std::vector<std::string>> tags;
     std::array<std::string, static_cast<size_t>(Block::number)> content;
 
-    void set_content (std::string content, Block block) {
+    void set_content (std::string& content, Block block) {
         if (block != Block::number) {
             this->content[static_cast<size_t>(block)].swap(content);
         }
@@ -34,19 +34,19 @@ struct Entry {
 
     //void write_content (std::string content, Block to) {
     //    if (to == Block::number) {
-    //        // logger << "WARNING: writing to unspecified block in file " << source << "\n"; // kein zugriff auf logger
+    //        // logger << "WARNING: writing to unspecified block in file " << source << "\n"; // no access to logger
     //        return;
     //    }
     //    std::swap(this->content[static_cast<size_t>(to)], content);
     //}
 };
 
-std::unordered_map<std::string, Entry*> Entry::linkNames;
+std::unordered_multimap<std::string, Entry*> Entry::linkNames;
 
 namespace Phraser {
 
     std::string image (fs::path path) {
-        return "<div class=\"spacer\"><img class=\"characterPic\" src=\"" + path.string() + "\"></div>";
+        return "<div class=\"spacer\"><img class=\"Picture\" src=\"" + path.string() + "\"></div>";
     }
 
     std::string dropdownTitle (fs::path path, std::string name) {
@@ -71,56 +71,7 @@ namespace Phraser {
      * @param buff the input file string to get the tags from
      */
     void computeMetadata(Entry* file, const std::string& buff) {
-        size_t position = 0;
-
-        size_t first_command = buff.find_first_of("$", position);
-        size_t first_tag = buff.find_first_of(":", position);
-
-        while (true) {
-            first_command = buff.find_first_of("$", position);
-            first_tag = buff.find_first_of(":", position);
-
-            if (first_command == std::string::npos && first_tag == std::string::npos) {
-                logger << "ERROR: no content section\n";
-                break;
-            } else if (first_tag < first_command) {
-                size_t line_start = buff.find_last_of("\n", first_tag);
-                line_start++; // dont need the newline
-
-                std::string tag = buff.substr(line_start, first_tag - line_start);
-                tag = chomp(tag);
-
-
-
-                size_t line_end = buff.find_first_of("\n", first_tag);
-                line_end = line_end == -1 ? buff.size() : line_end;
-                std::string data = buff.substr(first_tag + 1, line_end - first_tag - 1);
-                std::vector<std::string> values = split(data, ',');
-
-                file->tags.insert(std::pair<std::string, std::vector<std::string>>(tag, values));
-
-                if (tag == "linknames") {
-                    for (std::string linkn : values) {
-                        if (file->linkNames.find(linkn) != file->linkNames.end()) {
-                            logger << "WARNING: multiple uses of linkname '" << linkn << "'\n";
-                        }
-
-                        file->linkNames[linkn] = file;
-                    }
-                }
-
-                position = first_tag + 1;
-            } else {
-                if (buff.substr(first_command + 1, first_command + 6 - first_command) == "start{") {
-                    file->content[0] = buff.substr(first_command);
-                    return;
-                } else {
-                    logger << "ERROR: incorrect command in meta-section\n";
-                    break;
-                }
-            }
-        }
-        exit(1);
+        
     }
 
     /**
@@ -132,31 +83,91 @@ namespace Phraser {
         // read baseHtmlFiles
         // std::ifstream baseLayout;
         // baseLayout.open(fs::path("baseHtmlFiles/baseLayout.html"));
-        logger < "\n\nPhrasing files\n";
-
-        std::ifstream inFile;
-        inFile.open(file->source);
-
         // needed at writing at destination:
         //
         // static std::ifstream informationLayout;
         // informationLayout.open(fs::path("baseHtmlFiles/informationLayout.html"));
         // std::ofstream informationFile;
         // informationFile.open(file->destination);
-
-        const std::string buff = read_file(inFile);
-
-        computeMetadata(file, buff);
         
-        logger << "\nWARNING: not implemented yet\n";
+        
+        logger < "\n\nopen and read " < file->source.string() < "\n";
+
+        const std::string buff = read_file(file->source);
+
+        logger < "get all meta-data\n";
+        {
+            size_t position = 0;
+
+            size_t first_command;
+            size_t first_tag;
+            
+            bool default_linknames = true;
+
+            while (true) {
+                first_command = buff.find_first_of("$", position);
+                first_tag = buff.find_first_of(":", position);
+
+                if (first_command == std::string::npos) {
+                    logger << "\nERROR: no content section\n";
+                    //? instead of exiting, continue with next file
+                    exit(1);
+                } else if (first_tag < first_command) {
+                    size_t line_start = buff.find_last_of("\n", first_tag);
+                    line_start++; // dont need the newline
+
+                    std::string tag = buff.substr(line_start, first_tag - line_start);
+                    tag = chomp(tag);
+
+
+
+                    size_t line_end = buff.find_first_of("\n", first_tag);
+                    line_end = line_end == -1 ? buff.size() : line_end;
+                    std::string data = buff.substr(first_tag + 1, line_end - first_tag - 1);
+                    std::vector<std::string> values = split(data, ',');
+
+                    file->tags.insert(std::pair<std::string, std::vector<std::string>>(tag, values));
+
+                    if (tag == "linknames") {
+                        for (std::string linkn : values) {
+                            file->linkNames.insert(std::pair<std::string, Entry*>(to_lower(linkn), file));
+                        }
+                    }
+
+                    position = first_tag + 1;
+                } else {
+                    first_command++;
+                    if (buff.substr(first_command, 5) == "start") {
+                        file->content[0] = buff.substr(first_command);
+                        break;
+                    } else if (is_at(buff, first_command + 1, "no_default_linknames")) {
+                        default_linknames = false;
+                    } else {
+                        logger << "\nERROR: incorrect command in meta-section >$" << buff.substr(first_command, buff.find_first_not_of(strhelp::word_chars, first_command) - first_command) << "<\n";
+                        //? instead of exiting, continue with next file
+                        exit(1);
+                    }
+                }
+            }
+            
+            if (default_linknames) {
+                file->linkNames.insert(std::pair<std::string, Entry*>(to_lower(file->source.stem()), file));
+                try {
+                    file->linkNames.insert(std::pair<std::string, Entry*>(to_lower(file->tags.at("title").at(0)), file));
+                } catch (const std::out_of_range& oor) { /* ignored */}
+            }
+        }
+        logger < "done with meta-data from this file\n";
+        return;
     }
+    
 
     // TODO: write content in einem stück
     std::string checkCommands(Entry* file, Entry::Block start, std::string buff, size_t open, size_t close, bool list) {
         size_t pos = open;
         std::string content = "";
 
-        if(list) {
+        if (list) {
             content += "<ul>\n";
         }
         while (pos > close) {
@@ -229,30 +240,30 @@ namespace Phraser {
                 if(cmd == -1) {
                     int cmd = links.find_first_of(',');
                     if(cmd == -1) {
-                        if(file->linkNames.count(links) == 1) {
-                            content += "<a href=\"" + file->linkNames.at(links)->destination.string() + "\">" + links + "</a>";
-                        } else {
-                            // TODO: Error message
-                        }
+//                         if(file->linkNames.count(links) == 1) {
+//                             content += "<a href=\"" + file->linkNames.at(links)->destination.string() + "\">" + links + "</a>";
+//                         } else {
+//                             // TODO: Error message
+//                         }
                     } else {
                         for (std::string link : split(links, ',')) {
-                            if(file->linkNames.count(link) == 1) {
-                                content += "<a href=\"" + file->linkNames.at(link)->destination.string() + "\">" + link + "</a>";
-                            } else {
-                                // TODO: Error message
-                            }
+//                             if(file->linkNames.count(link) == 1) {
+//                                 content += "<a href=\"" + file->linkNames.at(link)->destination.string() + "\">" + link + "</a>";
+//                             } else {
+//                                 // TODO: Error message
+//                             }
                         }
                     }
                 } else if (links.find("$tags") != std::string::npos) {
                     for (std::string link: file->tags.at(links.substr(links.find_first_of('{') + 1,
                                                                       links.find_last_of('}') -
                                                                       links.find_first_of('{') - 1))) {
-                        if (file->linkNames.count(link) == 1) {
-                            content += "<a href=\"" + file->linkNames.at(link)->destination.string() + "\">" + link + "</a>";
-                        } else {
-                            logger << YELLOW << "WARNING: Link to " << link << " not found" << RESET;
-                            content += link;
-                        }
+//                         if (file->linkNames.count(link) == 1) {
+//                             content += "<a href=\"" + file->linkNames.at(link)->destination.string() + "\">" + link + "</a>";
+//                         } else {
+//                             logger << YELLOW << "WARNING: Link to " << link << " not found" << RESET;
+//                             content += link;
+//                         }
                     }
                 }
             } else {
