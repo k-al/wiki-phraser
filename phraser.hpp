@@ -289,8 +289,23 @@ namespace Phraser {
                 }
                 
                 pos++;
-                if (is_at(buff, pos, "")) { 
+                if (is_at(buff, pos, "link[")) {
+                    pos += 5;
                     
+                    size_t link_start = pos;
+                    pos = match_brackets(buff, pos - 1);
+                    size_t link_ln = pos - link_start;
+                    
+                    if (pos == std::string::npos) {
+                        logger << RED << "missmatching ackets i lik command" << RESET;
+                        exit(1);
+                    }
+                    
+                    pos++;
+                    
+                    if (buff[pos] == '{') {
+                        // TODO
+                    }
                 }
                 
             } else {
