@@ -56,7 +56,7 @@ namespace Phraser {
             if (block != Block::number) {
                 this->content[static_cast<size_t>(block)].swap(content);
             } else {
-                Phraser::logger << "NOOOOOO...\n";
+                Phraser::logger << RED << "Error: Tried to write content to no content-block\n" << RESET;
             }
         }
     };
@@ -65,12 +65,39 @@ namespace Phraser {
     static std::unordered_map<std::string, Entry*> entries;
     
     
+    struct Command {
+        StrRange command;
+        StrRange square_para;
+        StrRange curly_para;
+        bool square_is_path;
+        fs::path path;
+        
+        Command (StrRange base, size_t pos) {
+            if (!base.contains(pos))
+                trow std::runtime_error("Command starting point is out of given range");
+            
+            if (base[0] != '$')
+                throw std::runtime_error("Command doesn't start with '$'");
+            
+                
+        }
+    };
+    
+    
+    sf::path get_command (const Entry& entry, const std::string str_path) {
+        if (str_path.size() == 0)
+            return sf::path();
+        
+        
+    }
+    
+    
     /**
      * Computes the tags of the given wikiph file and places them in the Entry\n
      * @param file the Entry to store the data in
      * @param buff the input file string to get the tags from
      */
-    void computeMetadata(Entry* file, const std::string& buff) {
+    void computeMetadata (Entry* file, const std::string& buff) {
         
     }
 
@@ -241,80 +268,7 @@ namespace Phraser {
     }
     
     
-    std::string process_command_text (Entry* file, const std::string& buff, size_t& pos, size_t end, size_t level) {
-        if (end == std::string::npos)
-            end = buff.size();
-        
-        if (pos >= end)
-            return "";
-        
-        std::string content = "";
-        
-
-        while (true) {
-            { // get the new position
-                size_t new_pos = end;
-                
-                size_t first_occ = buff.find_first_of('$', pos);
-                new_pos = new_pos < first_occ ? new_pos : first_occ;
-                
-                first_occ = buff.find_first_of('\n', pos);
-                new_pos = new_pos < first_occ ? new_pos : first_occ;
-                
-                if (pos != new_pos) {
-                    //? maybe code a string builder with vector as base for better memory management at growing strings
-                    content += buff.substr(pos, new_pos - pos);
-                }
-                
-                pos = new_pos;
-            }
-            
-            if (pos == end) {
-                return content;
-            }
-            
-            if (buff[pos] == '\n') { // replace all '\n' to "<\br>\n"
-                content += "</br>\n";
-                pos++;
-            } else if (buff[pos] == '$') { // found command
-                
-                // start command starts the next section, so return the gathered content
-                if (is_at(buff, pos + 1, "start")) {
-                    if (level == 0) {
-                        return content;
-                    } else {
-                        logger << RED << "broken file " << file->source.string() << "!\n" << RESET << "\tgot $strat command not on top level\n";
-                        exit(1);
-                    }
-                }
-                
-                pos++;
-                if (is_at(buff, pos, "link[")) {
-                    pos += 5;
-                    
-                    size_t link_start = pos;
-                    pos = match_brackets(buff, pos - 1);
-                    size_t link_ln = pos - link_start;
-                    
-                    if (pos == std::string::npos) {
-                        logger << RED << "missmatching ackets i lik command" << RESET;
-                        exit(1);
-                    }
-                    
-                    pos++;
-                    
-                    if (buff[pos] == '{') {
-                        // TODO
-                    }
-                }
-                
-            } else {
-                logger << RED << "\nSomething went horribly wrong!\n was looking for '$' or '\\n', but got neither(" << ("" + buff[pos]) << ")\n" << RESET;
-                exit(1);
-            }
-        }
-            
-    }
+    
     
     void process_command () {
         for (std::pair<std::string, Entry*> it : entries) {
@@ -325,16 +279,16 @@ namespace Phraser {
             std::string buff;
             buff.swap(it.second->content[0]);
             
-            size_t pos = 0;
             
-            while (pos < buff.size()) {
+            StrRange work_string(buff, 0, buff.size());
+            
+            while (work_string.contains_index(pos)) {
                 if (!is_at(buff, pos, "$start")) {
                     logger << RED << "broken file " << it.second->source.string() << "!\n" << RESET << "\texpectet >$start< but got >" << buff.substr(pos, 6) << "<\n";
                     exit(1);
                 }
                 pos += 6;
                 Entry::Block active_block;
-                
                 
                 if (buff[pos] == ' ' || buff[pos] == '\n' || buff[pos] == '\t') {
                     active_block = Entry::Block::Main;
@@ -352,14 +306,132 @@ namespace Phraser {
                     exit(1);
                 }
                 
-                std::string content = process_command_text(it.second, buff, pos, buff.size(), 0);
-                
-                it.second->set_content(content, active_block);
-                
-                logger << it.first;
             }
         }
     }
+    
+    
+//     std::string process_command_text (Entry* file, const std::string& buff, size_t& pos, size_t end, size_t level) {
+//         if (end == std::string::npos)
+//             end = buff.size();
+//         
+//         if (pos >= end)
+//             return "";
+//         
+//         std::string content = "";
+//         
+// 
+//         while (true) {
+//             { // get the new position
+//                 size_t new_pos = end;
+//                 
+//                 size_t first_occ = buff.find_first_of('$', pos);
+//                 new_pos = new_pos < first_occ ? new_pos : first_occ;
+//                 
+//                 first_occ = buff.find_first_of('\n', pos);
+//                 new_pos = new_pos < first_occ ? new_pos : first_occ;
+//                 
+//                 if (pos != new_pos) {
+//                     //? maybe code a string builder with vector as base for better memory management at growing strings
+//                     content += buff.substr(pos, new_pos - pos);
+//                 }
+//                 
+//                 pos = new_pos;
+//             }
+//             
+//             if (pos == end) {
+//                 return content;
+//             }
+//             
+//             if (buff[pos] == '\n') { // replace all '\n' to "<\br>\n"
+//                 content += "</br>\n";
+//                 pos++;
+//             } else if (buff[pos] == '$') { // found command
+//                 
+//                 // start command starts the next section, so return the gathered content
+//                 if (is_at(buff, pos + 1, "start")) {
+//                     if (level == 0) {
+//                         return content;
+//                     } else {
+//                         logger << RED << "broken file " << file->source.string() << "!\n" << RESET << "\tgot $start command not on top level\n";
+//                         exit(1);
+//                     }
+//                 }
+//                 
+//                 pos++;
+//                 if (is_at(buff, pos, "link[")) {
+//                     pos += 5;
+//                     
+//                     size_t link_start = pos;
+//                     pos = match_brackets(buff, pos - 1);
+//                     size_t link_ln = pos - link_start;
+//                     
+//                     fs::path link_path = get_path_from(buff, link_start, link_ln);
+//                     
+//                     if (pos == std::string::npos) {
+//                         logger << RED << "missmatching backets in link command" << RESET;
+//                         exit(1);
+//                     }
+//                     
+//                     pos++;
+//                     
+//                     if (buff[pos] == '{') {
+//                         // TODO
+//                     }
+//                 }
+//                 
+//             } else {
+//                 logger << RED << "\nSomething went horribly wrong!\n was looking for '$' or '\\n', but got neither(" << ("" + buff[pos]) << ")\n" << RESET;
+//                 exit(1);
+//             }
+//         }
+//             
+//     }
+//     
+//     void process_command () {
+//         for (std::pair<std::string, Entry*> it : entries) {
+//             // if not wikiph: skip
+//             if (!it.second->phrased) {
+//                 continue;
+//             }
+//             std::string buff;
+//             buff.swap(it.second->content[0]);
+//             
+//             size_t pos = 0;
+//             
+//             while (pos < buff.size()) {
+//                 if (!is_at(buff, pos, "$start")) {
+//                     logger << RED << "broken file " << it.second->source.string() << "!\n" << RESET << "\texpectet >$start< but got >" << buff.substr(pos, 6) << "<\n";
+//                     exit(1);
+//                 }
+//                 pos += 6;
+//                 Entry::Block active_block;
+//                 
+//                 
+//                 if (buff[pos] == ' ' || buff[pos] == '\n' || buff[pos] == '\t') {
+//                     active_block = Entry::Block::Main;
+//                 } else if (is_at(buff, pos, "{}")) {
+//                     pos += 2;
+//                     active_block = Entry::Block::Main;
+//                 } else if (is_at(buff, pos, "{main}")) {
+//                     pos += 6;
+//                     active_block = Entry::Block::Main;
+//                 } else if (is_at(buff, pos, "{side}")) {
+//                     pos += 6;
+//                     active_block = Entry::Block::Side;
+//                 } else {
+//                     logger << RED << "invalide $start command at " << it.second->source.string() << RESET << "\n";
+//                     exit(1);
+//                 }
+//                 
+//                 std::string content = process_command_text(it.second, buff, pos, buff.size(), 0);
+//                 
+//                 it.second->set_content(content, active_block);
+//                 
+//                 logger << it.first;
+//             }
+//         }
+//     }
 
     // TODO: write content in einem stück
     std::string checkCommands(Entry* file, Entry::Block start, std::string buff, size_t open, size_t close, bool list) {

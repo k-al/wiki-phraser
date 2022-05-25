@@ -3,6 +3,40 @@
 #include <sstream>
 #include "string_helper.hpp"
 
+
+StrRange::StrRange (std::string& base, size_t start, size_t length) {
+    if (base.size() < (start + length))
+        throw std::lenth_error("Range constructed out of range of base string");
+    
+    
+    this->base = &base;
+    this->start = start;
+    this->length = length;
+}
+
+char StrRange::operator[] (size_t pos) {
+    if (pos >= this->length)
+        throw std::runtime_error("Tried to acess on char out of Range");
+    
+    return this->base->[this->start + pos];
+}
+
+size_t StrRange::end () {
+    return this->start + this->length;
+}
+
+bool StrRange::conatins_index_of_base (size_t pos) {
+    return this->start <= pos && pos < (this->start + this->length);
+}
+
+bool StrRange::conatins_index (size_t pos) {
+    return pos < this->length;
+}
+
+std::string StrRange::get () {
+    return this->base->substr(this->start, this->length);
+}
+
 std::string chomp (const std::string& in) {
     size_t start = in.find_first_not_of(" \n\t");
     size_t end = in.find_last_not_of(" \n\t") + 1;

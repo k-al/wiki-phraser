@@ -5,6 +5,23 @@
 #include <string>
 #include <filesystem>
 
+struct StrRange {
+    std::string* base;
+    size_t start = 0;
+    size_t length = 0;
+    
+    StrRange (std::string& base, size_t start, size_t length);
+    
+    char StrRange::operator[] (size_t pos);
+    
+    size_t end ();
+    bool contains_index_of_base (size_t pos);
+    bool conatins_index (size_t pos);
+    
+    std::string get ();
+}
+
+
 std::string chomp (const std::string& in);
 
 std::string read_file (std::ifstream& file);
