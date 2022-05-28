@@ -32,6 +32,7 @@ std::vector<std::string> split(const std::string& s, char splitChar);
 size_t match_brackets (const std::string& string, size_t start_bracket);
 
 bool is_at (const std::string& string, size_t pos, const std::string& match);
+bool is_at (const StrRange& string, size_t pos, const std::string& match);
 
 std::string to_lower (const std::string& string);
 

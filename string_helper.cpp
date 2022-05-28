@@ -4,7 +4,9 @@
 #include "string_helper.hpp"
 
 
-StrRange::StrRange (std::string& base, size_t start, size_t length) {
+StrRange::StrRange (const std::string& base, size_t start, size_t length) {
+    
+    //! integer overflow vunerable
     if (base.size() < (start + length))
         throw std::lenth_error("Range constructed out of range of base string");
     
@@ -12,6 +14,20 @@ StrRange::StrRange (std::string& base, size_t start, size_t length) {
     this->base = &base;
     this->start = start;
     this->length = length;
+}
+
+StrRange::StrRange (const StrRange& base, size_t start, size_t length = std::string::npos) {
+    if (length == std::string::npos) {
+        length = base.length - start;
+        
+    //! integer overflow vunerable
+    } else if (base.conatins_index(start + length)) {
+        throw std::lenth_error("Range constructed out of range of base string-range");
+    }
+    
+    this->base = base->base;
+    this->start = base->start + start;
+    this->length = length
 }
 
 char StrRange::operator[] (size_t pos) {
@@ -143,6 +159,17 @@ size_t match_brackets (const std::string& string, size_t start_bracket) {
  */
 bool is_at (const std::string& string, size_t pos, const std::string& match) {
     if ((pos + match.size()) > string.size())
+        return false;
+    
+    for (size_t i = 0; i < match.size(); i++) {
+        if (match[i] != string[pos + i])
+            return false;
+    }
+    return true;
+}
+
+bool is_at (const StrRange& string, size_t pos, const std::string& match) {
+    if (!string.conatins_index(pos + match.size()))
         return false;
     
     for (size_t i = 0; i < match.size(); i++) {

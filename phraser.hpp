@@ -65,21 +65,39 @@ namespace Phraser {
     static std::unordered_map<std::string, Entry*> entries;
     
     
+    StrRange get_bracket (StrRange base, size_t pos) {
+        
+    }
+    
     struct Command {
-        StrRange command;
+        
+        enum class CommandType {
+            Start = 0,
+            Link,
+            Linknames,
+            Time,
+            
+            number
+        };
+        
+        StrRange command_text;
         StrRange square_para;
         StrRange curly_para;
+        CommandType command;
         bool square_is_path;
         fs::path path;
         
         Command (StrRange base, size_t pos) {
             if (!base.contains(pos))
-                trow std::runtime_error("Command starting point is out of given range");
+                throw std::runtime_error("Command starting point is out of given range");
             
             if (base[0] != '$')
                 throw std::runtime_error("Command doesn't start with '$'");
             
+            if (is_at(base, 1, "start")) {
+                 
                 
+            }
         }
     };
     
@@ -283,28 +301,6 @@ namespace Phraser {
             StrRange work_string(buff, 0, buff.size());
             
             while (work_string.contains_index(pos)) {
-                if (!is_at(buff, pos, "$start")) {
-                    logger << RED << "broken file " << it.second->source.string() << "!\n" << RESET << "\texpectet >$start< but got >" << buff.substr(pos, 6) << "<\n";
-                    exit(1);
-                }
-                pos += 6;
-                Entry::Block active_block;
-                
-                if (buff[pos] == ' ' || buff[pos] == '\n' || buff[pos] == '\t') {
-                    active_block = Entry::Block::Main;
-                } else if (is_at(buff, pos, "{}")) {
-                    pos += 2;
-                    active_block = Entry::Block::Main;
-                } else if (is_at(buff, pos, "{main}")) {
-                    pos += 6;
-                    active_block = Entry::Block::Main;
-                } else if (is_at(buff, pos, "{side}")) {
-                    pos += 6;
-                    active_block = Entry::Block::Side;
-                } else {
-                    logger << RED << "invalide $start command at " << it.second->source.string() << RESET << "\n";
-                    exit(1);
-                }
                 
             }
         }
