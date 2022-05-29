@@ -12,7 +12,8 @@ struct StrRange {
     
     StrRange (std::string& base, size_t start, size_t length);
     
-    char StrRange::operator[] (size_t pos);
+    char operator[] (const size_t pos);
+    char at (const size_t pos);
     
     size_t end ();
     bool contains_index_of_base (size_t pos);

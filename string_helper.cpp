@@ -30,7 +30,11 @@ StrRange::StrRange (const StrRange& base, size_t start, size_t length = std::str
     this->length = length
 }
 
-char StrRange::operator[] (size_t pos) {
+char StrRange::operator[] (const size_t pos) {
+    return this->base->[this->start + pos];
+}
+
+char StrRange::at (const size_t pos) {
     if (pos >= this->length)
         throw std::runtime_error("Tried to acess on char out of Range");
     
@@ -123,6 +127,34 @@ std::vector<std::string> split(const std::string& s, char splitChar) {
  * @return position of the closing bracket if present. std::string::npos otherwise
  */
 size_t match_brackets (const std::string& string, size_t start_bracket) {
+    char end_b;
+    const char start_b = string.at(start_bracket);
+    if (start_b == '{') {
+        end_b = '}';
+    } else if (start_b == '[') {
+        end_b = ']';
+    } else if (start_b == '(') {
+        end_b = ')';
+    } else if (start_b == '<') {
+        end_b = '>';
+    } else {
+        return std::string::npos;
+    }
+
+    size_t pos = start_bracket;
+    size_t open = string.find_first_of(start_b, pos + 1);
+    size_t close = string.find_first_of(end_b, pos + 1);
+
+    while (open < close) {
+        pos = match_brackets(string, open);
+        open = string.find_first_of(start_b, pos + 1);
+        close = string.find_first_of(end_b, pos + 1);
+    }
+    
+    return close;
+}
+
+size_t match_brackets (const StrRange& string, size_t start_bracket) {
     char end_b;
     const char start_b = string.at(start_bracket);
     if (start_b == '{') {

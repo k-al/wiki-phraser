@@ -24,7 +24,9 @@ namespace Phraser {
     static Args arguments;
     static Logger logger;
     
-    
+    StrRange get_bracket (StrRange base, size_t pos) {
+        
+    }
     
     struct Entry {
         enum class Block {
