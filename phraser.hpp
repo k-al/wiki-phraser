@@ -25,7 +25,7 @@ namespace Phraser {
     static Logger logger;
     
     StrRange get_bracket (StrRange base, size_t pos) {
-        
+        return base;
     }
     
     struct Entry {
@@ -66,11 +66,6 @@ namespace Phraser {
     
     static std::unordered_map<std::string, Entry*> entries;
     
-    
-    StrRange get_bracket (StrRange base, size_t pos) {
-        
-    }
-    
     struct Command {
         
         enum class CommandType {
@@ -90,7 +85,7 @@ namespace Phraser {
         fs::path path;
         
         Command (StrRange base, size_t pos) {
-            if (!base.contains(pos))
+            if (!base.contains_index(pos))
                 throw std::runtime_error("Command starting point is out of given range");
             
             if (base[0] != '$')
@@ -104,11 +99,11 @@ namespace Phraser {
     };
     
     
-    sf::path get_command (const Entry& entry, const std::string str_path) {
+    fs::path get_command (const Entry& entry, const std::string str_path) {
         if (str_path.size() == 0)
-            return sf::path();
+            return fs::path();
         
-        
+        return fs::path();
     }
     
     
@@ -296,15 +291,13 @@ namespace Phraser {
             if (!it.second->phrased) {
                 continue;
             }
-            std::string buff;
-            buff.swap(it.second->content[0]);
-            
-            
-            StrRange work_string(buff, 0, buff.size());
+            StrRange work_string(it.second->content[0]);
+            size_t pos = 0;
             
             while (work_string.contains_index(pos)) {
-                
+                break;
             }
+            return;
         }
     }
     

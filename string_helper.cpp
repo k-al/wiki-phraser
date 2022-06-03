@@ -4,11 +4,17 @@
 #include "string_helper.hpp"
 
 
+StrRange::StrRange () {
+    this->base = nullptr;
+    this->start = 0;
+    this->length = 0;
+}
+
 StrRange::StrRange (const std::string& base, size_t start, size_t length) {
     
     //! integer overflow vunerable
     if (base.size() < (start + length))
-        throw std::lenth_error("Range constructed out of range of base string");
+        throw std::length_error("Range constructed out of range of base string");
     
     
     this->base = &base;
@@ -22,12 +28,12 @@ StrRange::StrRange (const StrRange& base, size_t start, size_t length = std::str
         
     //! integer overflow vunerable
     } else if (base.contains_index(start + length)) {
-        throw std::lenth_error("Range constructed out of range of base string-range");
+        throw std::length_error("Range constructed out of range of base string-range");
     }
     
-    this->base = base->base;
-    this->start = base->start + start;
-    this->length = length
+    this->base = base.base;
+    this->start = base.start + start;
+    this->length = length;
 }
 
 StrRange::StrRange (const std::string& base) {
@@ -36,40 +42,40 @@ StrRange::StrRange (const std::string& base) {
     this->length = base.length();
 }
 
-char StrRange::operator[] (const size_t pos) {
-    return this->base->[this->start + pos];
+char StrRange::operator[] (const size_t pos) const {
+    return (*this->base)[this->start + pos];
 }
 
-char StrRange::at (const size_t pos) {
+char StrRange::at (const size_t pos) const {
     if (pos >= this->length)
         throw std::runtime_error("Tried to acess on char out of Range");
     
-    return this->base->[this->start + pos];
+    return (*this->base)[this->start + pos];
 }
 
-size_t StrRange::end () {
+size_t StrRange::end () const {
     return this->start + this->length;
 }
 
-bool StrRange::contains_index_of_base (size_t pos) {
+bool StrRange::contains_index_of_base (size_t pos) const {
     return this->start <= pos && pos < (this->start + this->length);
 }
 
-bool StrRange::contains_index (size_t pos) {
+bool StrRange::contains_index (size_t pos) const {
     return pos < this->length;
 }
 
-size_t find_first_of (char match, size_t pos = 0) {
-    for (size_t i = pos; contains_index(pos); i++) {
+size_t StrRange::find_first_of (char match, size_t pos) const {
+    for (size_t i = pos; this->contains_index(pos); i++) {
         if ((*this)[i] == match)
             return i;
     }
     return std::string::npos;
 }
 
-size_t find_first_of (std::string match, size_t pos = 0) {
-    for (size_t i = pos; contains_index(pos); i++) {
-        for (auto match_it = match.cbegin; match_it != match.cend; match_it++) {
+size_t StrRange::find_first_of (std::string match, size_t pos) const {
+    for (size_t i = pos; this->contains_index(pos); i++) {
+        for (auto match_it = match.cbegin(); match_it != match.cend(); match_it++) {
             if ((*this)[i] == *match_it)
                 return i;
         }
@@ -77,17 +83,17 @@ size_t find_first_of (std::string match, size_t pos = 0) {
     return std::string::npos;
 }
 
-size_t find_first_not_of (char match, size_t pos = 0) {
-    for (size_t i = pos; contains_index(pos); i++) {
+size_t StrRange::find_first_not_of (char match, size_t pos) const {
+    for (size_t i = pos; this->contains_index(pos); i++) {
         if ((*this)[i] != match)
             return i;
     }
     return std::string::npos;
 }
 
-size_t find_first_not_of (std::string match, size_t pos = 0) {
-    for (size_t i = pos; contains_index(pos); i++) {
-        for (auto match_it = match.cbegin; match_it != match.cend; match_it++) {
+size_t StrRange::find_first_not_of (std::string match, size_t pos) const {
+    for (size_t i = pos; this->contains_index(pos); i++) {
+        for (auto match_it = match.cbegin(); match_it != match.cend(); match_it++) {
             if ((*this)[i] != *match_it)
                 return i;
         }
@@ -95,7 +101,7 @@ size_t find_first_not_of (std::string match, size_t pos = 0) {
     return std::string::npos;
 }
 
-size_t find_last_of (char match, size_t pos = std::string::npos) {
+size_t StrRange::find_last_of (char match, size_t pos) const {
     if (pos > this->length)
         pos = this->length;
     
@@ -107,13 +113,13 @@ size_t find_last_of (char match, size_t pos = std::string::npos) {
     return std::string::npos;
 }
 
-size_t find_last_of (std::string match, size_t pos = std::string::npos) {
+size_t StrRange::find_last_of (std::string match, size_t pos) const {
     if (pos > this->length)
         pos = this->length;
     
     for (size_t i = pos; i > 0; ) {
         i--;
-        for (auto match_it = match.cbegin; match_it != match.cend; match_it++) {
+        for (auto match_it = match.cbegin(); match_it != match.cend(); match_it++) {
             if ((*this)[i] == *match_it)
                 return i;
         }
@@ -121,7 +127,7 @@ size_t find_last_of (std::string match, size_t pos = std::string::npos) {
     return std::string::npos;
 }
 
-size_t find_last_not_of (char match, size_t pos = std::string::npos) {
+size_t StrRange::find_last_not_of (char match, size_t pos) const {
     if (pos > this->length)
         pos = this->length;
     
@@ -133,13 +139,13 @@ size_t find_last_not_of (char match, size_t pos = std::string::npos) {
     return std::string::npos;
 }
 
-size_t find_last_not_of (std::string match, size_t pos = std::string::npos) {
+size_t StrRange::find_last_not_of (std::string match, size_t pos) const {
     if (pos > this->length)
         pos = this->length;
     
     for (size_t i = pos; i > 0; ) {
         i--;
-        for (auto match_it = match.cbegin; match_it != match.cend; match_it++) {
+        for (auto match_it = match.cbegin(); match_it != match.cend(); match_it++) {
             if ((*this)[i] != *match_it)
                 return i;
         }

@@ -6,32 +6,33 @@
 #include <filesystem>
 
 struct StrRange {
-    std::string* base;
+    const std::string* base;
     size_t start = 0;
     size_t length = 0;
     
-    StrRange (std::string& base, size_t start, size_t length);
-    StrRange (StrRange& base, size_t start, size_t length);
-    StrRange (std::string& base);
+    StrRange ();
+    StrRange (const std::string& base, size_t start, size_t length);
+    StrRange (const StrRange& base, size_t start, size_t length);
+    StrRange (const std::string& base);
     
-    char operator[] (const size_t pos);
-    char at (const size_t pos);
+    char operator[] (const size_t pos) const;
+    char at (const size_t pos) const;
     
-    size_t end ();
-    bool contains_index_of_base (size_t pos);
-    bool conatins_index (size_t pos);
+    size_t end () const;
+    bool contains_index_of_base (size_t pos) const;
+    bool contains_index (size_t pos) const;
     
-    size_t find_first_of (char match, size_t pos = 0);
-    size_t find_first_of (std::string match, size_t pos = 0);
-    size_t find_first_not_of (char match, size_t pos = 0);
-    size_t find_first_not_of (std::string match, size_t pos = 0);
-    size_t find_last_of (char match, size_t pos = std::string::npos);
-    size_t find_last_of (std::string match, size_t pos = std::string::npos);
-    size_t find_last_not_of (char match, size_t pos = std::string::npos);
-    size_t find_last_not_of (std::string match, size_t pos = std::string::npos);
+    size_t find_first_of (char match, size_t pos = 0) const;
+    size_t find_first_of (std::string match, size_t pos = 0) const;
+    size_t find_first_not_of (char match, size_t pos = 0) const;
+    size_t find_first_not_of (std::string match, size_t pos = 0) const;
+    size_t find_last_of (char match, size_t pos = std::string::npos) const;
+    size_t find_last_of (std::string match, size_t pos = std::string::npos) const;
+    size_t find_last_not_of (char match, size_t pos = std::string::npos) const;
+    size_t find_last_not_of (std::string match, size_t pos = std::string::npos) const;
     
     std::string get ();
-}
+};
 
 
 std::string chomp (const std::string& in);
