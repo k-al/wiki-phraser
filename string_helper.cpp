@@ -21,13 +21,19 @@ StrRange::StrRange (const StrRange& base, size_t start, size_t length = std::str
         length = base.length - start;
         
     //! integer overflow vunerable
-    } else if (base.conatins_index(start + length)) {
+    } else if (base.contains_index(start + length)) {
         throw std::lenth_error("Range constructed out of range of base string-range");
     }
     
     this->base = base->base;
     this->start = base->start + start;
     this->length = length
+}
+
+StrRange::StrRange (const std::string& base) {
+    this->base = &base;
+    this->start = 0;
+    this->length = base.length();
 }
 
 char StrRange::operator[] (const size_t pos) {
@@ -45,12 +51,100 @@ size_t StrRange::end () {
     return this->start + this->length;
 }
 
-bool StrRange::conatins_index_of_base (size_t pos) {
+bool StrRange::contains_index_of_base (size_t pos) {
     return this->start <= pos && pos < (this->start + this->length);
 }
 
-bool StrRange::conatins_index (size_t pos) {
+bool StrRange::contains_index (size_t pos) {
     return pos < this->length;
+}
+
+size_t find_first_of (char match, size_t pos = 0) {
+    for (size_t i = pos; contains_index(pos); i++) {
+        if ((*this)[i] == match)
+            return i;
+    }
+    return std::string::npos;
+}
+
+size_t find_first_of (std::string match, size_t pos = 0) {
+    for (size_t i = pos; contains_index(pos); i++) {
+        for (auto match_it = match.cbegin; match_it != match.cend; match_it++) {
+            if ((*this)[i] == *match_it)
+                return i;
+        }
+    }
+    return std::string::npos;
+}
+
+size_t find_first_not_of (char match, size_t pos = 0) {
+    for (size_t i = pos; contains_index(pos); i++) {
+        if ((*this)[i] != match)
+            return i;
+    }
+    return std::string::npos;
+}
+
+size_t find_first_not_of (std::string match, size_t pos = 0) {
+    for (size_t i = pos; contains_index(pos); i++) {
+        for (auto match_it = match.cbegin; match_it != match.cend; match_it++) {
+            if ((*this)[i] != *match_it)
+                return i;
+        }
+    }
+    return std::string::npos;
+}
+
+size_t find_last_of (char match, size_t pos = std::string::npos) {
+    if (pos > this->length)
+        pos = this->length;
+    
+    for (size_t i = pos; i > 0; ) {
+        i--;
+        if ((*this)[i] == match)
+            return i;
+    }
+    return std::string::npos;
+}
+
+size_t find_last_of (std::string match, size_t pos = std::string::npos) {
+    if (pos > this->length)
+        pos = this->length;
+    
+    for (size_t i = pos; i > 0; ) {
+        i--;
+        for (auto match_it = match.cbegin; match_it != match.cend; match_it++) {
+            if ((*this)[i] == *match_it)
+                return i;
+        }
+    }
+    return std::string::npos;
+}
+
+size_t find_last_not_of (char match, size_t pos = std::string::npos) {
+    if (pos > this->length)
+        pos = this->length;
+    
+    for (size_t i = pos; i > 0; ) {
+        i--;
+        if ((*this)[i] != match)
+            return i;
+    }
+    return std::string::npos;
+}
+
+size_t find_last_not_of (std::string match, size_t pos = std::string::npos) {
+    if (pos > this->length)
+        pos = this->length;
+    
+    for (size_t i = pos; i > 0; ) {
+        i--;
+        for (auto match_it = match.cbegin; match_it != match.cend; match_it++) {
+            if ((*this)[i] != *match_it)
+                return i;
+        }
+    }
+    return std::string::npos;
 }
 
 std::string StrRange::get () {
@@ -62,13 +156,13 @@ std::string chomp (const std::string& in) {
     size_t end = in.find_last_not_of(" \n\t") + 1;
     
     //! this is dangerous and should be in another function
-    if (in[start] == '\'' || in[start] == '"') {
-        size_t pair = in.find_last_of(in[start]);
-        if (pair != start) {
-            end = pair - 1;
-            start++;
-        }
-    }
+//     if (in[start] == '\'' || in[start] == '"') {
+//         size_t pair = in.find_last_of(in[start]);
+//         if (pair != start) {
+//             end = pair - 1;
+//             start++;
+//         }
+//     }
     
 //     std::cout << "chomp: " << in << " (" << in.length() << ") (" << start << "|" << end << ")\n";  
     end -= start;
@@ -90,7 +184,7 @@ std::string chomp (const std::string& in) {
 std::string read_file (std::ifstream& file) {
     file.seekg(0, std::ios::end);
     size_t size = file.tellg();
-    std::string buffer(size, ' ');
+    std::string buffer(size, '\0');
     file.seekg(0);
     file.read(&buffer[0], size);
     return buffer;
@@ -201,7 +295,7 @@ bool is_at (const std::string& string, size_t pos, const std::string& match) {
 }
 
 bool is_at (const StrRange& string, size_t pos, const std::string& match) {
-    if (!string.conatins_index(pos + match.size()))
+    if (!string.contains_index(pos + match.size()))
         return false;
     
     for (size_t i = 0; i < match.size(); i++) {

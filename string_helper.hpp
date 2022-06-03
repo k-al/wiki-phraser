@@ -11,6 +11,8 @@ struct StrRange {
     size_t length = 0;
     
     StrRange (std::string& base, size_t start, size_t length);
+    StrRange (StrRange& base, size_t start, size_t length);
+    StrRange (std::string& base);
     
     char operator[] (const size_t pos);
     char at (const size_t pos);
@@ -18,6 +20,15 @@ struct StrRange {
     size_t end ();
     bool contains_index_of_base (size_t pos);
     bool conatins_index (size_t pos);
+    
+    size_t find_first_of (char match, size_t pos = 0);
+    size_t find_first_of (std::string match, size_t pos = 0);
+    size_t find_first_not_of (char match, size_t pos = 0);
+    size_t find_first_not_of (std::string match, size_t pos = 0);
+    size_t find_last_of (char match, size_t pos = std::string::npos);
+    size_t find_last_of (std::string match, size_t pos = std::string::npos);
+    size_t find_last_not_of (char match, size_t pos = std::string::npos);
+    size_t find_last_not_of (std::string match, size_t pos = std::string::npos);
     
     std::string get ();
 }
