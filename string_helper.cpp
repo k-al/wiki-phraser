@@ -153,8 +153,25 @@ size_t StrRange::find_last_not_of (std::string match, size_t pos) const {
     return std::string::npos;
 }
 
-std::string StrRange::get () {
+std::string StrRange::get () const {
     return this->base->substr(this->start, this->length);
+}
+
+void StrRange::consume_to (size_t pos) {
+    if (!this->contains_index(pos)) {
+        this->length = 0;
+    } else {
+        this->length -= pos;
+    }
+    
+    this->start += pos;
+    return;
+}
+
+void StrRange::consume_from (size_t pos) {
+    if (this->contains_index(pos)) {
+        this->length = pos;
+    }
 }
 
 std::string chomp (const std::string& in) {

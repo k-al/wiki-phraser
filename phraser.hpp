@@ -24,10 +24,6 @@ namespace Phraser {
     static Args arguments;
     static Logger logger;
     
-    StrRange get_bracket (StrRange base, size_t pos) {
-        return base;
-    }
-    
     struct Entry {
         enum class Block {
             Main = 0,
@@ -70,8 +66,8 @@ namespace Phraser {
         
         enum class CommandType {
             Start = 0,
-            Link,
             Linknames,
+            Link,
             Time,
             
             number
@@ -84,7 +80,42 @@ namespace Phraser {
         bool square_is_path;
         fs::path path;
         
-        Command (StrRange base, size_t pos) {
+        static std::pair<StrRange, StrRange> get_brackets (StrRange& base, size_t pos) {
+            StrRange square;
+            StrRange curly;
+            
+            size_t bracket_pos = base.find_first_not_of(strhelp::white_chars, pos);
+            
+            if (is_at(base, bracket_pos, "[")) {
+                size_t start = bracket_pos + 1;
+                pos = match_brackets(base, bracket_pos);
+                
+                if (pos == std::string::npos)
+                    throw std::runtime_error("Not matching square bracket");
+                
+                square = StrRange(base, start, pos - start);
+                
+                pos++;
+                bracket_pos = base.find_first_not_of(strhelp::white_chars, pos);
+            }
+            
+            if (is_at(base, bracket_pos, "{")) {
+                size_t start = bracket_pos + 1;
+                pos = match_brackets(base, bracket_pos);
+                
+                if (pos == std::string::npos)
+                    throw std::runtime_error("Not matching curly bracket");
+                
+                curly = StrRange(base, start, pos - start);
+                
+                pos++;
+            }
+            
+            base.consume_to(pos);
+            return std::pair<StrRange, StrRange>(square, curly);
+        }
+        
+        Command (StrRange& base, size_t pos) {
             if (!base.contains_index(pos))
                 throw std::runtime_error("Command starting point is out of given range");
             
@@ -92,7 +123,12 @@ namespace Phraser {
                 throw std::runtime_error("Command doesn't start with '$'");
             
             if (is_at(base, 1, "start")) {
-                 
+                std::pair<StrRange, StrRange> para = get_brackets(base, 6);
+                this->square_is_path == false;
+                
+            } else if (is_at(base, 1, "linknames")) {
+                std::pair<StrRange, StrRange> para = get_brackets(base, 10);
+                this->square_is_path == true;
                 
             }
         }

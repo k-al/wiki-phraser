@@ -31,7 +31,10 @@ struct StrRange {
     size_t find_last_not_of (char match, size_t pos = std::string::npos) const;
     size_t find_last_not_of (std::string match, size_t pos = std::string::npos) const;
     
-    std::string get ();
+    std::string get () const;
+    
+    void consume_to (size_t pos);
+    void consume_from (size_t pos);
 };
 
 
@@ -43,6 +46,7 @@ std::string read_file (const std::filesystem::path& file);
 std::vector<std::string> split(const std::string& s, char splitChar);
 
 size_t match_brackets (const std::string& string, size_t start_bracket);
+size_t match_brackets (const StrRange& string, size_t start_bracket);
 
 bool is_at (const std::string& string, size_t pos, const std::string& match);
 bool is_at (const StrRange& string, size_t pos, const std::string& match);
@@ -51,6 +55,7 @@ std::string to_lower (const std::string& string);
 
 namespace strhelp {
     static const std::string word_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+    static const std::string white_chars = " \t\n";
 }
 
 #endif
