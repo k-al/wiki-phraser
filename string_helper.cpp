@@ -258,17 +258,22 @@ size_t match_brackets (const std::string& string, size_t start_bracket) {
         return std::string::npos;
     }
 
-    size_t pos = start_bracket;
-    size_t open = string.find_first_of(start_b, pos + 1);
-    size_t close = string.find_first_of(end_b, pos + 1);
+    const std::string brackets(start_b, end_b);
+    size_t pos = string.find_first_of(brackets, start_bracket + 1);
 
-    while (open < close) {
-        pos = match_brackets(string, open);
-        open = string.find_first_of(start_b, pos + 1);
-        close = string.find_first_of(end_b, pos + 1);
+    while (string[pos] == start_b) {
+        pos = match_brackets(string, pos);
+        
+        if (pos == std::string::npos)
+            return std::string::npos;
+        
+        pos = string.find_first_of(brackets, pos + 1);
+        
+        if (pos == std::string::npos)
+            return std::string::npos;
     }
     
-    return close;
+    return pos;
 }
 
 size_t match_brackets (const StrRange& string, size_t start_bracket) {
@@ -286,17 +291,22 @@ size_t match_brackets (const StrRange& string, size_t start_bracket) {
         return std::string::npos;
     }
 
-    size_t pos = start_bracket;
-    size_t open = string.find_first_of(start_b, pos + 1);
-    size_t close = string.find_first_of(end_b, pos + 1);
+    const std::string brackets(start_b, end_b);
+    size_t pos = string.find_first_of(brackets, start_bracket + 1);
 
-    while (open < close) {
-        pos = match_brackets(string, open);
-        open = string.find_first_of(start_b, pos + 1);
-        close = string.find_first_of(end_b, pos + 1);
+    while (string[pos] == start_b) {
+        pos = match_brackets(string, pos);
+        
+        if (pos == std::string::npos)
+            return std::string::npos;
+        
+        pos = string.find_first_of(brackets, pos + 1);
+        
+        if (pos == std::string::npos)
+            return std::string::npos;
     }
     
-    return close;
+    return pos;
 }
 
 /**
