@@ -94,9 +94,11 @@ size_t StrRange::find_first_not_of (char match, size_t pos) const {
 size_t StrRange::find_first_not_of (std::string match, size_t pos) const {
     for (size_t i = pos; this->contains_index(pos); i++) {
         for (auto match_it = match.cbegin(); match_it != match.cend(); match_it++) {
-            if ((*this)[i] != *match_it)
-                return i;
+            if ((*this)[i] == *match_it)
+                goto MATCH_FOUND;
         }
+        return i; // return only if the whole for was running without a match
+        MATCH_FOUND:;
     }
     return std::string::npos;
 }
@@ -146,9 +148,11 @@ size_t StrRange::find_last_not_of (std::string match, size_t pos) const {
     for (size_t i = pos; i > 0; ) {
         i--;
         for (auto match_it = match.cbegin(); match_it != match.cend(); match_it++) {
-            if ((*this)[i] != *match_it)
-                return i;
+            if ((*this)[i] == *match_it)
+                goto MATCH_FOUND;
         }
+        return i; // return only if the whole for was running without a match
+        MATCH_FOUND:;
     }
     return std::string::npos;
 }
