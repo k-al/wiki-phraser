@@ -189,7 +189,7 @@ StrRange StrRange::consume_to (size_t pos) {
 
 StrRange StrRange::consume_from (size_t pos) {
     if (this->contains_index(pos)) {
-        StrRange res = StrRange(*this);
+        StrRange res = StrRange(*this, pos);
         this->length = pos;
         return res;
     }
