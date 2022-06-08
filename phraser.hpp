@@ -94,6 +94,7 @@ namespace Phraser {
                     throw std::runtime_error("Not matching square bracket");
                 
                 square = StrRange(base, start, pos - start);
+                chomp(square);
                 
                 pos++;
                 bracket_pos = base.find_first_not_of(strhelp::white_chars, pos);
@@ -107,12 +108,18 @@ namespace Phraser {
                     throw std::runtime_error("Not matching curly bracket");
                 
                 curly = StrRange(base, start, pos - start);
+                chomp(curly);
                 
                 pos++;
             }
             
             base.consume_to(pos);
             return std::pair<StrRange, StrRange>(square, curly);
+        }
+        
+        static fs::path get_path (StrRange string) {
+            //! there must be more to do
+            return fs::path(string.get());
         }
         
         Command (StrRange& base, size_t pos) {

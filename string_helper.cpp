@@ -10,12 +10,14 @@ StrRange::StrRange () {
     this->length = 0;
 }
 
-StrRange::StrRange (const std::string& base, size_t start, size_t length) {
-    
+StrRange::StrRange (const std::string& base, size_t start, size_t length = std::string::npos) {
+    if (length == std::string::npos) {
+        length = base.length() - start;
+        
     //! integer overflow vunerable
-    if (base.size() < (start + length))
+    } else if (base.size() < (start + length)) {
         throw std::length_error("Range constructed out of range of base string");
-    
+    }
     
     this->base = &base;
     this->start = start;
@@ -40,6 +42,12 @@ StrRange::StrRange (const std::string& base) {
     this->base = &base;
     this->start = 0;
     this->length = base.length();
+}
+
+StrRange::StrRange (const StrRange& base) {
+    this->base = base.base;
+    this->start = base.start;
+    this->length = base.length;
 }
 
 char StrRange::operator[] (const size_t pos) const {
@@ -149,7 +157,7 @@ size_t StrRange::find_last_not_of (std::string match, size_t pos) const {
         i--;
         for (auto match_it = match.cbegin(); match_it != match.cend(); match_it++) {
             if ((*this)[i] == *match_it)
-                goto MATCH_FOUND;
+                goto MATCH_FOUND; // break and skip return
         }
         return i; // return only if the whole for was running without a match
         MATCH_FOUND:;
@@ -161,46 +169,59 @@ std::string StrRange::get () const {
     return this->base->substr(this->start, this->length);
 }
 
-void StrRange::consume_to (size_t pos) {
+StrRange StrRange::consume_to (size_t pos) {
+    StrRange res;
     if (!this->contains_index(pos)) {
+        res = StrRange(*this);
+        
         this->length = 0;
+        
+        return res;
     } else {
+        res = StrRange(*this, 0, pos);
+        
         this->length -= pos;
+        this->start += pos;
+        
+        return res;
     }
-    
-    this->start += pos;
-    return;
 }
 
-void StrRange::consume_from (size_t pos) {
+StrRange StrRange::consume_from (size_t pos) {
     if (this->contains_index(pos)) {
+        StrRange res = StrRange(*this);
         this->length = pos;
+        return res;
     }
+    return StrRange(*this, pos, 0);
 }
 
 std::string chomp (const std::string& in) {
-    size_t start = in.find_first_not_of(" \n\t");
-    size_t end = in.find_last_not_of(" \n\t") + 1;
-    
-    //! this is dangerous and should be in another function
-//     if (in[start] == '\'' || in[start] == '"') {
-//         size_t pair = in.find_last_of(in[start]);
-//         if (pair != start) {
-//             end = pair - 1;
-//             start++;
-//         }
-//     }
-    
-//     std::cout << "chomp: " << in << " (" << in.length() << ") (" << start << "|" << end << ")\n";  
-    end -= start;
-    
-    if (end <= 0) {
+    const size_t start = in.find_first_not_of(strhelp::white_chars);
+    if (start == std::string::npos) {
         return "";
-    } else {
-        return in.substr(start, end);
     }
+    
+    const size_t end = in.find_last_not_of(strhelp::white_chars) + 1;
+    // checking not necessary, because previous check showed that there is a non-whitespace char in 'in'
+    
+    return in.substr(start, end - start);
 };
 
+void chomp (StrRange& in) {
+    const size_t start = in.find_first_not_of(strhelp::white_chars);
+    if (start == std::string::npos) {
+        in.consume_from(0);
+        return;
+    }
+    
+    const size_t end = in.find_last_not_of(strhelp::white_chars) + 1;
+    // checking not necessary, because previous check showed that there is a non-whitespace char in 'in'
+    
+    in.consume_to(start);
+    in.consume_from(end);
+    return;
+}
 
 /**
  * reads a file into a string\n

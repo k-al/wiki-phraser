@@ -14,6 +14,7 @@ struct StrRange {
     StrRange (const std::string& base, size_t start, size_t length);
     StrRange (const StrRange& base, size_t start, size_t length);
     StrRange (const std::string& base);
+    StrRange (const StrRange& base);
     
     char operator[] (const size_t pos) const;
     char at (const size_t pos) const;
@@ -33,12 +34,13 @@ struct StrRange {
     
     std::string get () const;
     
-    void consume_to (size_t pos);
-    void consume_from (size_t pos);
+    StrRange consume_to (size_t pos);
+    StrRange consume_from (size_t pos);
 };
 
 
 std::string chomp (const std::string& in);
+void chomp (StrRange& in);
 
 std::string read_file (std::ifstream& file);
 std::string read_file (const std::filesystem::path& file);
