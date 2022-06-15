@@ -50,6 +50,10 @@ StrRange::StrRange (const StrRange& base) {
     this->length = base.length;
 }
 
+bool StrRange::operator== (const std::string equivalent) const {
+    return this->length == equivalent.length() && is_at(*this, 0, equivalent);
+}
+
 char StrRange::operator[] (const size_t pos) const {
     return (*this->base)[this->start + pos];
 }
@@ -103,7 +107,7 @@ size_t StrRange::find_first_not_of (std::string match, size_t pos) const {
     for (size_t i = pos; this->contains_index(pos); i++) {
         for (auto match_it = match.cbegin(); match_it != match.cend(); match_it++) {
             if ((*this)[i] == *match_it)
-                goto MATCH_FOUND;
+                goto MATCH_FOUND; // break and skip return
         }
         return i; // return only if the whole for was running without a match
         MATCH_FOUND:;

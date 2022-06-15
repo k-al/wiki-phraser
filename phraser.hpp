@@ -69,16 +69,16 @@ namespace Phraser {
             Linknames,
             Link,
             Time,
+            Listall,
+            List,
+            Tag,
             
             number
         };
         
-        StrRange command_text;
         StrRange square_para;
         StrRange curly_para;
         CommandType command;
-        bool square_is_path;
-        fs::path path;
         
         static std::pair<StrRange, StrRange> get_brackets (StrRange& base, size_t pos) {
             StrRange square;
@@ -117,12 +117,8 @@ namespace Phraser {
             return std::pair<StrRange, StrRange>(square, curly);
         }
         
-        static fs::path get_path (StrRange string) {
-            //! there must be more to do
-            return fs::path(string.get());
-        }
-        
         Command (StrRange& base, size_t pos) {
+            std::pair<StrRange, StrRange> para;
             if (!base.contains_index(pos))
                 throw std::runtime_error("Command starting point is out of given range");
             
@@ -130,13 +126,40 @@ namespace Phraser {
                 throw std::runtime_error("Command doesn't start with '$'");
             
             if (is_at(base, 1, "start")) {
-                std::pair<StrRange, StrRange> para = get_brackets(base, 6);
-                this->square_is_path == false;
+                try {
+                    para = get_brackets(base, 6);
+                } catch (std::runtime_error e) {
+                    throw std::runtime_error(e.what() + static_cast<std::string>(" in $start command"));
+                }
+                this->command = CommandType::Start;
                 
             } else if (is_at(base, 1, "linknames")) {
-                std::pair<StrRange, StrRange> para = get_brackets(base, 10);
-                this->square_is_path == true;
+                try {
+                    para = get_brackets(base, 10);
+                } catch (std::runtime_error e) {
+                    throw std::runtime_error(e.what() + static_cast<std::string>(" in $linknames command"));
+                }
+                this->command = CommandType::Linknames;
                 
+            } else if (is_at(base, 1, "link")) {
+                try {
+                    para = get_brackets(base, 5);
+                } catch (std::runtime_error e) {
+                    throw std::runtime_error(e.what() + static_cast<std::string>(" in $link command"));
+                }
+                this->command = CommandType::Link;
+                
+            } else if (is_at(base, 1, "time")) {
+                try {
+                    para = get_brackets(base, 5);
+                } catch (std::runtime_error e) {
+                    throw std::runtime_error(e.what() + static_cast<std::string>(" in $time command"));
+                }
+                this->command = CommandType::Time;
+                
+            } else {
+                StrRange command(base, 0, base.find_first_not_of(strhelp::word_chars, 1));
+                throw std::runtime_error("Unknown command '" + command.get() + "'");
             }
         }
     };

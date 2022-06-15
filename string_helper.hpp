@@ -16,6 +16,7 @@ struct StrRange {
     StrRange (const std::string& base);
     StrRange (const StrRange& base);
     
+    bool operator== (const std::string equivalent) const;
     char operator[] (const size_t pos) const;
     char at (const size_t pos) const;
     
