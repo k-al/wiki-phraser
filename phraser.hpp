@@ -54,7 +54,7 @@ namespace Phraser {
             if (block != Block::number) {
                 this->content[static_cast<size_t>(block)].swap(content);
             } else {
-                Phraser::logger << RED << "Error: Tried to write content to no content-block\n" << RESET;
+                Phraser::logger << RED << "Error: Tried to write content to non content block\n" << RESET;
             }
         }
     };
@@ -358,9 +358,18 @@ namespace Phraser {
                 continue;
             }
             StrRange work_string(it.second->content[0]);
-            size_t pos = 0;
             
-            while (work_string.contains_index(pos)) {
+            std::array<std::stringstream, static_cast<size_t>(Entry::Block::number)> content_builder;
+            
+            size_t pos;
+            
+            while (work_string.length > 0) {
+                pos = work_string.find_first_of("\n$\\");
+                
+                if (pos == std::string::npos) {
+                    
+                }
+                
                 break;
             }
             return;
