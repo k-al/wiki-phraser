@@ -164,8 +164,8 @@ namespace Phraser {
         }
         
         void clear () {
-            this->square.length = 0; // invalidating the Ranges
-            this->curly.length = 0;
+            this->square_para.length = 0; // invalidating the Ranges
+            this->curly_para.length = 0;
             this->type = CommandType::number; // setting the type to NoType
         }
     };
@@ -388,9 +388,9 @@ namespace Phraser {
             
             if (command.type != Command::CommandType::Start) {
                 throw std::runtime_error("Error: expected Start command (nr. "
-                                        + static_cast<std::string>(static_cast<size_t>(Command::CommandType::Start))
+                                        + std::to_string(static_cast<int>(Command::CommandType::Start))
                                         + "), but got nr. "
-                                        + static_cast<std::string>(static_cast<size_t>(start_command.type))
+                                        + std::to_string(static_cast<int>(command.type))
                                         + "\n");
             }
             
@@ -400,16 +400,16 @@ namespace Phraser {
                 /********************************
                 * process the '$start' command */
                 
-                if (command.curly.length == 0
-                    || is_at(command.curly, 0, "main"))
+                if (command.curly_para.length == 0
+                    || is_at(command.curly_para, 0, "main"))
                 {
                     active_block = Entry::Block::Main;
                     
-                } else if (is_at(command.curly, 0, "side")) {
+                } else if (is_at(command.curly_para, 0, "side")) {
                     active_block = Entry::Block::Side;
                 } else {
                     throw std::runtime_error("Error: unknown Block "
-                                            + command.curly.get()
+                                            + command.curly_para.get()
                                             + "specified in '$start' command\n");
                 }
                 
@@ -447,7 +447,7 @@ namespace Phraser {
                         
                     } else {
                         throw std::runtime_error("Error: somethig went really wrong:\n\tsearched for '\\', '\\n' or '$' but found '"
-                                            + static_cast<std::string>(work_string[0])
+                                            + std::string(1, work_string[0])
                                             + "'\n");
                     }
                 }
