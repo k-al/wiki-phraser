@@ -78,7 +78,7 @@ namespace Phraser {
         
         StrRange square_para;
         StrRange curly_para;
-        CommandType command;
+        CommandType type;
         
         static std::pair<StrRange, StrRange> get_brackets (StrRange& base, size_t pos) {
             StrRange square;
@@ -131,7 +131,7 @@ namespace Phraser {
                 } catch (std::runtime_error e) {
                     throw std::runtime_error(e.what() + static_cast<std::string>(" in $start command"));
                 }
-                this->command = CommandType::Start;
+                this->type = CommandType::Start;
                 
             } else if (is_at(base, 1, "linknames")) {
                 try {
@@ -139,7 +139,7 @@ namespace Phraser {
                 } catch (std::runtime_error e) {
                     throw std::runtime_error(e.what() + static_cast<std::string>(" in $linknames command"));
                 }
-                this->command = CommandType::Linknames;
+                this->type = CommandType::Linknames;
                 
             } else if (is_at(base, 1, "link")) {
                 try {
@@ -147,7 +147,7 @@ namespace Phraser {
                 } catch (std::runtime_error e) {
                     throw std::runtime_error(e.what() + static_cast<std::string>(" in $link command"));
                 }
-                this->command = CommandType::Link;
+                this->type = CommandType::Link;
                 
             } else if (is_at(base, 1, "time")) {
                 try {
@@ -155,22 +155,28 @@ namespace Phraser {
                 } catch (std::runtime_error e) {
                     throw std::runtime_error(e.what() + static_cast<std::string>(" in $time command"));
                 }
-                this->command = CommandType::Time;
+                this->type = CommandType::Time;
                 
             } else {
                 StrRange command(base, 0, base.find_first_not_of(strhelp::word_chars, 1));
                 throw std::runtime_error("Unknown command '" + command.get() + "'");
             }
         }
+        
+        void clear () {
+            this->square.length = 0; // invalidating the Ranges
+            this->curly.length = 0;
+            this->type = CommandType::number; // setting the type to NoType
+        }
     };
     
     
-    fs::path get_command (const Entry& entry, const std::string str_path) {
-        if (str_path.size() == 0)
-            return fs::path();
-        
-        return fs::path();
-    }
+//     fs::path get_command (const Entry& entry, const std::string str_path) {
+//         if (str_path.size() == 0)
+//             return fs::path();
+//         
+//         return fs::path();
+//     }
     
     
     /**
@@ -350,6 +356,10 @@ namespace Phraser {
     
     
     
+    std::string html_newline () {
+        return "</br>\n"; // '\n' does nothing but to increase the readebility of the generated html file
+    }
+    
     
     void process_command () {
         for (std::pair<std::string, Entry*> it : entries) {
@@ -362,15 +372,85 @@ namespace Phraser {
             std::array<std::stringstream, static_cast<size_t>(Entry::Block::number)> content_builder;
             
             size_t pos;
+            Entry::Block active_block;
             
-            while (work_string.length > 0) {
-                pos = work_string.find_first_of("\n$\\");
+            
+            /**********************************
+            * get the first '$start' command */
+            
+            pos = work_string.find_first_of('$');
+            
+            if (pos == std::string::npos) {
+                 throw std::runtime_error("Warning: No content found (forgot '$start' command?)\n");
+            }
+            
+            Command command(work_string, pos);
+            
+            if (command.type != Command::CommandType::Start) {
+                throw std::runtime_error("Error: expected Start command (nr. "
+                                        + static_cast<std::string>(static_cast<size_t>(Command::CommandType::Start))
+                                        + "), but got nr. "
+                                        + static_cast<std::string>(static_cast<size_t>(start_command.type))
+                                        + "\n");
+            }
+            
+            
+            while (command.type != Command::CommandType::number) {
                 
-                if (pos == std::string::npos) {
+                /********************************
+                * process the '$start' command */
+                
+                if (command.curly.length == 0
+                    || is_at(command.curly, 0, "main"))
+                {
+                    active_block = Entry::Block::Main;
                     
+                } else if (is_at(command.curly, 0, "side")) {
+                    active_block = Entry::Block::Side;
+                } else {
+                    throw std::runtime_error("Error: unknown Block "
+                                            + command.curly.get()
+                                            + "specified in '$start' command\n");
                 }
                 
-                break;
+                /*******************************
+                 * process all other commands */
+                
+                command.clear();
+                
+                while (1) {
+                    pos = work_string.find_first_of("\n$\\");
+                    
+                    if (pos = std::string::npos) {
+                        content_builder[static_cast<size_t>(active_block)] << work_string.get();
+                        break;
+                    }
+                    StrRange append = work_string.consume_to(pos); // does not get found char
+                    content_builder[static_cast<size_t>(active_block)] << append.get();
+                    
+                    if (work_string[0] == '\n') {
+                        
+                        content_builder[static_cast<size_t>(active_block)] << html_newline();
+                        work_string.consume_to(1); // remove the newline
+                        
+                    } else if (work_string[0] == '\\') {
+                        
+                        if (work_string.length == 1) {
+                            logger << "Warning: dubious escape character '\\' at end of file gets ignored\n";
+                            break;
+                        }
+                        
+                        content_builder[static_cast<size_t>(active_block)] << work_string[1];
+                        work_string.consume_to(2);
+                        
+                    } else if (work_string[0] == '$') {
+                        
+                    } else {
+                        throw std::runtime_error("Error: somethig went really wrong:\n\tsearched for '\\', '\\n' or '$' but found '"
+                                            + static_cast<std::string>(work_string[0])
+                                            + "'\n");
+                    }
+                }
             }
             return;
         }

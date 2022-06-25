@@ -173,6 +173,13 @@ std::string StrRange::get () const {
     return this->base->substr(this->start, this->length);
 }
 
+
+/**
+ * chops off the first @param pos characters and returns them in a new StrRange\n
+ * if pos is greater than the length of the calling StrRange it returns the whole StrRange and invalidates the calling StrRange (set length to 0)
+ * @param pos position of the cut (cuts BEFORE the n'th character)
+ * @return StrRange of the cutted characters
+ */
 StrRange StrRange::consume_to (size_t pos) {
     StrRange res;
     if (!this->contains_index(pos)) {
@@ -191,6 +198,13 @@ StrRange StrRange::consume_to (size_t pos) {
     }
 }
 
+
+/**
+ * chops off everything after the first @param pos characters and returns it in a new StrRange\n
+ * if pos is greater than the length of the calling StrRange it returns an empty StrRange and does not modify the calling StrRange
+ * @param pos position of the cut (cuts AFTER the n'th character)
+ * @return StrRange of the cutted characters
+ */
 StrRange StrRange::consume_from (size_t pos) {
     if (this->contains_index(pos)) {
         StrRange res = StrRange(*this, pos);
