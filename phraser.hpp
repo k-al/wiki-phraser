@@ -128,7 +128,7 @@ namespace Phraser {
             if (is_at(base, 1, "start")) {
                 try {
                     para = get_brackets(base, 6);
-                } catch (std::runtime_error e) {
+                } catch (std::runtime_error& e) {
                     throw std::runtime_error(e.what() + static_cast<std::string>(" in $start command"));
                 }
                 this->type = CommandType::Start;
@@ -136,7 +136,7 @@ namespace Phraser {
             } else if (is_at(base, 1, "linknames")) {
                 try {
                     para = get_brackets(base, 10);
-                } catch (std::runtime_error e) {
+                } catch (std::runtime_error& e) {
                     throw std::runtime_error(e.what() + static_cast<std::string>(" in $linknames command"));
                 }
                 this->type = CommandType::Linknames;
@@ -144,7 +144,7 @@ namespace Phraser {
             } else if (is_at(base, 1, "link")) {
                 try {
                     para = get_brackets(base, 5);
-                } catch (std::runtime_error e) {
+                } catch (std::runtime_error& e) {
                     throw std::runtime_error(e.what() + static_cast<std::string>(" in $link command"));
                 }
                 this->type = CommandType::Link;
@@ -152,7 +152,7 @@ namespace Phraser {
             } else if (is_at(base, 1, "time")) {
                 try {
                     para = get_brackets(base, 5);
-                } catch (std::runtime_error e) {
+                } catch (std::runtime_error& e) {
                     throw std::runtime_error(e.what() + static_cast<std::string>(" in $time command"));
                 }
                 this->type = CommandType::Time;
@@ -171,22 +171,6 @@ namespace Phraser {
     };
     
     
-//     fs::path get_command (const Entry& entry, const std::string str_path) {
-//         if (str_path.size() == 0)
-//             return fs::path();
-//         
-//         return fs::path();
-//     }
-    
-    
-    /**
-     * Computes the tags of the given wikiph file and places them in the Entry\n
-     * @param file the Entry to store the data in
-     * @param buff the input file string to get the tags from
-     */
-    void computeMetadata (Entry* file, const std::string& buff) {
-        
-    }
 
     /**
      * Reads the input Files and places the tags in the given Entry\n
@@ -299,7 +283,7 @@ namespace Phraser {
                     logger < "Is directory and is allready present as " < dest_path < "\n";
                 }
                 
-                //! make Entry which is later linked to right index
+                //! TODO: make Entry which is later linked to right index
                 
                 continue;
             }
@@ -360,6 +344,14 @@ namespace Phraser {
         return "</br>\n"; // '\n' does nothing but to increase the readebility of the generated html file
     }
     
+    void command_link (std::stringstream& out_stream, const Command& command, const Entry* active_entry) {
+        
+    }
+    
+    void command_time (std::stringstream& out_stream, const Command& command, const Entry* active_entry) {
+        
+    }
+    
     
     void process_command () {
         for (std::pair<std::string, Entry*> it : entries) {
@@ -381,12 +373,14 @@ namespace Phraser {
             pos = work_string.find_first_of('$');
             
             if (pos == std::string::npos) {
+                //! TODO: extent the message with file information
                  throw std::runtime_error("Warning: No content found (forgot '$start' command?)\n");
             }
             
             Command command(work_string, pos);
             
             if (command.type != Command::CommandType::Start) {
+                //! TODO: extent the message with file information
                 throw std::runtime_error("Error: expected Start command (nr. "
                                         + std::to_string(static_cast<int>(Command::CommandType::Start))
                                         + "), but got nr. "
@@ -416,9 +410,8 @@ namespace Phraser {
                 /*******************************
                  * process all other commands */
                 
-                command.clear();
-                
                 while (1) {
+                    command.clear();
                     pos = work_string.find_first_of("\n$\\");
                     
                     if (pos = std::string::npos) {
@@ -436,6 +429,7 @@ namespace Phraser {
                     } else if (work_string[0] == '\\') {
                         
                         if (work_string.length == 1) {
+                            //! TODO: extent the message with file information
                             logger << "Warning: dubious escape character '\\' at end of file gets ignored\n";
                             break;
                         }
@@ -445,7 +439,29 @@ namespace Phraser {
                         
                     } else if (work_string[0] == '$') {
                         
+                        
+                        try {
+                            command = Command(work_string, 0);
+                        } catch (const std::exception& e) {
+                            //! TODO: extent the message with file information
+                            throw;
+                        }
+                        
+                        if (command.type == Command::CommandType::Start) {
+                            break;
+                        }
+                        
+                        switch (command.type) {
+                            case Command::CommandType::Link:
+                                command_link(content_builder[static_cast<size_t>(active_block)], command, it.second);
+                                break;
+                                
+                            case Command::CommandType::Time:
+                                command_time(content_builder[static_cast<size_t>(active_block)], command, it.second);
+                        }
+                        
                     } else {
+                        //! TODO: extent the message with file information
                         throw std::runtime_error("Error: somethig went really wrong:\n\tsearched for '\\', '\\n' or '$' but found '"
                                             + std::string(1, work_string[0])
                                             + "'\n");
