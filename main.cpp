@@ -7,9 +7,6 @@
 #include <unordered_set>
 #include <unordered_map>
 
-namespace fs = std::filesystem;
-
-
 #include "string_helper.hpp"
 #include "logger.hpp"
 #include "args.hpp"
@@ -26,5 +23,7 @@ int main (const int argc, const char** argv) {
     
     arguments = Args::check_args(argc, argv);
     
-    Phraser::phraser_main(arguments, logger);
+    set_globals(logger, arguments);
+    process_meta();
+    process_command();
 }

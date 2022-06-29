@@ -3,8 +3,9 @@
 #ifndef ARGS_GUARD
 #define ARGS_GUARD
 
-
 #include <array>
+
+namespace fs = std::filesystem;
 
 enum class Flags {
     VERBOSE = 0, // write out exactly what is going on
