@@ -1,6 +1,7 @@
 
 
 #include "phraser.hpp"
+#include "constants.hpp"
 
 static Args arguments;
 static Logger logger;
@@ -160,6 +161,65 @@ void command_link (std::stringstream& out_stream, const Command& command, const 
 
 void command_time (std::stringstream& out_stream, const Command& command, const Entry* active_entry) {
     
+    std::vector<std::string> time;
+    if (command.curly_para.length == 0) {
+        // get time from file entry
+        try {
+            time = active_entry->tags.at("time");
+        } catch (const std::out_of_range& oor) {
+            throw std::runtime_error("Error: '$time' command got not passed in the time in a file without a 'time' tag");
+        }
+    } else {
+        // get time from parameter
+        time = split(command.curly_para.get(), ',');
+    }
+    
+    if (time.size() == 0) {
+        throw std::runtime_error("Error: didnt catch the time in the '$time' command properly");
+    }
+    
+    out_stream << "<mark id=\"timestamp\">[";
+    
+    if (time.size() >= 3 && time[2].length() > 0) {
+        out_stream << time[2] << ".";
+    }
+    
+    if (time.size() >= 2 && time[1].length() > 0) {
+        if (time[1][0] == '\\') {
+            out_stream << time[1].substr(1) << ".";
+        } else if (time[1][0] == 'm') {
+            size_t num_pos = 1;
+            size_t num = std::stoul(time[1], &num_pos);
+            
+            if (num_pos <= 1) {
+                throw std::runtime_error("Error: '$time' command cant complete the requested month-translation for '" + time[1] + "'");
+            }
+            
+            if (ConfigConstants::months.size() <= num) {
+                throw std::runtime_error("Error: '$time' command cant complete the requested month-translation for '" + time[1] + "'\n\tmonth number out of range");
+            }
+            
+            out_stream << " " << ConfigConstants::months[num] << " ";
+        } else {
+            out_stream << time[1] << ".";
+        }
+    }
+    
+    if (time.size() >= 1 && time[0].length() > 0) {
+        // if last character is a digit, concat the default calendar defined in 'constants.hpp'
+        if (time[0][time[0].length() - 1] > '0' && time[0][time[0].length() - 1] < '9') {
+            out_stream << time[0] << ConfigConstants::calendar;
+            
+        // if last character is a '_' omit the calendar (and also the '_')
+        } else if (time[0][time[0].length() - 1] == '_') {
+            time[0].pop_back();
+            out_stream << time[0];
+        } else {
+            out_stream << time[0];
+        }
+    }
+    
+    out_stream << "]</mark>";
 }
 
 
