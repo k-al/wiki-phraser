@@ -1,7 +1,12 @@
 #ifndef CONSTANTS_GUARD
 #define CONSTANTS_GUARD
 
+// uncomment to disable assert()
+// #define NDEBUG
+#include <cassert>
+
 #include <string>
+#include <array>
 
 namespace ConfigConstants {
     const std::string calendar = "n.Vh.";

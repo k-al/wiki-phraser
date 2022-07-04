@@ -1,5 +1,6 @@
 
 
+#include "constants.hpp"
 #include "phraser_helper.hpp"
 
 Entry::Entry () = default;
@@ -105,6 +106,111 @@ void Command::clear () {
     this->square_para.length = 0; // invalidating the Ranges
     this->curly_para.length = 0;
     this->type = CommandType::number; // setting the type to NoType
+}
+
+HtmlPath::HtmlPath () {};
+
+HtmlPath::HtmlPath (fs::path fs_path, HtmlPath* offset) {
+    auto it = fs_path.begin();
+    
+    // jump over the rootname on Windows
+    // so project must be on one drive in Windows
+    if (fs_path.has_root_name()) {
+        it++;
+    }
+    
+    if (fs_path.is_absolute()) {
+        assert((it->string() == "/") && "Bug in fs::path -> HtmlPath conversion.\n\texpected '/' as first element in absolute path");
+        
+        this->relative_to = nullptr;
+        
+        it++;
+    } else {
+        this->relative_to = offset;
+    }
+    
+    std::string element;
+    while (it != fs_path.end()) {
+        element = it->string();
+        ++it;
+        
+        // remove index.html/.wikiph as filenames so they point instead to the respective folder
+        if (it == fs_path.end() && (element == "index.html" || element == "index.wikiph")) {
+            break;
+        }
+        
+        if (element == "..") {
+            if (this->elements.size() != 0 && this->elements.back() != "..") {
+                this->elements.pop_back();
+                continue;
+            }
+        }
+        
+        this->elements.push_back(element);
+    }
+}
+
+HtmlPath::HtmlPath (std::string str_path, HtmlPath* offset) {
+    
+    size_t pos = 0;
+    size_t new_pos, escape_diff;
+    
+    if (str_path.length() > 0 && str_path[0] == '/') {
+        pos++;
+        this->relative_to = nullptr;
+    } else {
+        this->relative_to = offset;
+    }
+    
+    while (pos < str_path.length()) {
+        pos = str_path.find_first_not_of('/', pos); // multiple '/' will be ignored
+        new_pos = pos;
+        
+        while (1) {
+            new_pos = str_path.find_first_of('/', new_pos);
+            
+            if (new_pos == std::string::npos) {
+                break;
+            }
+            
+            // count the number of escape characters before the '/'
+            escape_diff = (new_pos - 1) - str_path.find_last_not_of('\\', new_pos - 1);
+            
+            if ((escape_diff % 2) == 0) {
+                break;
+            }
+            
+            new_pos++;
+        }
+        
+        if (new_pos == std::string::npos) {
+            this->elements.push_back(str_path.substr(pos));
+        } else {
+            this->elements.push_back(str_path.substr(pos, new_pos - pos));
+        }
+        
+        // cancel out parent directories ('..' paths)
+        if (this->elements.size() >= 2 && this->elements.back() == ".." && this->elements[this->elements.size() - 2] != "..") {
+            this->elements.pop_back();
+            this->elements.pop_back();
+        }
+        
+        pos = new_pos;
+    }
+    
+    // remove index.html/.wikiph as filenames so they point instead to the respective folder
+    if (this->elements.back() == "index.html" || this->elements.back() == "index.wikiph") {
+        this->elements.pop_back();
+    }
+}
+
+HtmlPathParentIterator::HtmlPathParentIterator () {}
+
+HtmlPathParentIterator::HtmlPathParentIterator (HtmlPath* path) {
+    if (path != nullptr) {
+        this->path = path;
+        this->number = path->elements.size();
+    }
 }
 
 

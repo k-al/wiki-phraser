@@ -61,6 +61,32 @@ struct Command {
 };
 
 
+struct HtmlPath {
+    HtmlPath* relative_to = nullptr;
+    std::vector<std::string> elements;
+    
+    HtmlPath ();
+    HtmlPath (fs::path fs_path, HtmlPath* offset = nullptr);
+    HtmlPath (std::string str_path, HtmlPath* offset = nullptr);
+    
+    void make_absolute ();
+    HtmlPath path_to (HtmlPath dest);
+};
+
+struct HtmlPathParentIterator {
+    HtmlPath* path = nullptr;
+    size_t number = 0;
+    std::string ret;
+    
+    HtmlPathParentIterator();
+    HtmlPathParentIterator(HtmlPath* path);
+    
+    HtmlPathParentIterator& operator++ ();
+    bool operator!= (const HtmlPathParentIterator& other);
+    std::string operator* ();
+};
+
+
 std::string html_newline ();
 
 #endif

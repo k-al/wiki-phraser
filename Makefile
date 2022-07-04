@@ -15,7 +15,7 @@ string_helper.o: string_helper.hpp string_helper.cpp
 phraser.o: phraser.cpp phraser.hpp phraser_helper.hpp logger.hpp args.hpp string_helper.hpp
 	gcc $(CFLAGS) -o phraser.o -c phraser.cpp
 
-phraser_helper.o: phraser_helper.cpp phraser_helper.hpp string_helper.hpp
+phraser_helper.o: phraser_helper.cpp phraser_helper.hpp string_helper.hpp constants.hpp
 	gcc $(CFLAGS) -o phraser_helper.o -c phraser_helper.cpp
 
 phraser.app: main.o logger.o args.o string_helper.o phraser.o phraser_helper.o

@@ -178,7 +178,16 @@ void command_time (std::stringstream& out_stream, const Command& command, const 
         throw std::runtime_error("Error: didnt catch the time in the '$time' command properly");
     }
     
-    out_stream << "<mark id=\"timestamp\">[";
+    /* Style of class="timestamp"
+     * mark { 
+     *   background-color: #DAAA75;
+     *   color: black;
+     *   font-weight: bold;
+     * }
+     */
+
+    
+    out_stream << "<mark class=\"timestamp\">[";
     
     if (time.size() >= 3 && time[2].length() > 0) {
         out_stream << time[2] << ".";
