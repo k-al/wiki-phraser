@@ -17,10 +17,11 @@ enum class Flags {
     number
 };
 
-class Logger;
-
 struct Args {
-    inline static Logger* logger;
+private:
+    Args ();
+public:
+    static Args get;
     
     std::array<bool, static_cast<size_t>(Flags::number)> flags;
     fs::path logfile;
@@ -28,12 +29,9 @@ struct Args {
     fs::path source;
     fs::path dest;
     
-    Args (Logger* logger);
-    Args () = default;
+    bool flag (const Flags& flag);
     
-    bool get (const Flags& flag);
-    
-    static Args check_args (const int argc, const char** argv);
+    static void check_args (const int argc, const char** argv);
 };
 
 #endif

@@ -3,15 +3,11 @@
 #include "phraser.hpp"
 #include "constants.hpp"
 
-static Args& arguments = nullptr;
-static Logger& logger = nullptr;
+static Args& arguments = Args::get;
+static Logger& logger = Logger::out;
 
 static std::unordered_map<std::string, Entry*> entries;
 
-void set_globals (const Logger& log, const Args& arg) {
-    arguments = arg;
-    logger = log;
-}
 
 void process_meta_single (Entry* file) {
     logger < "\n\nopen and read " < file->source.string() < "\n";
@@ -131,7 +127,7 @@ void process_meta () {
                 fs::directory_entry dest_entry(dest_path);
                 if (dest_entry.exists()) {
                     logger < "Destination file allready exists";
-                    if (arguments.get(Flags::OVERRIDE)) {
+                    if (Args::get.flag(Flags::OVERRIDE)) {
                         logger < ", but overwrite it because of the '-o' Flag\n";
                         fs::copy_file(dir_entry.path(), dest_path, fs::copy_options::overwrite_existing);
                     } else {

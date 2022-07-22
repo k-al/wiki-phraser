@@ -10,16 +10,16 @@ namespace fs = std::filesystem;
 #include "args.hpp"
 #include "logger.hpp"
 
-Args::Args (Logger* logger) {
-    if (logger != nullptr) {
-        Args::logger = logger;
-    }
-    for (bool& bits : this->flags) {
-        bits = false;
-    }
-};
 
-bool Args::get (const Flags& flag) {
+Args Args::get = Args();
+
+Args::Args () {
+    for (bool& el : this->flags) {
+        el = false;
+    }
+}
+
+bool Args::flag (const Flags& flag) {
     return this->flags[static_cast<size_t>(flag)];
 }
 
@@ -57,9 +57,7 @@ void check_file (fs::path path, bool input = true) {
     }
 }
 
-Args Args::check_args (const int argc, const char** argv) {
-    
-    Args arguments(Args::logger);
+void Args::check_args (const int argc, const char** argv) {
     
     std::vector<std::string> args;
     for (int i = 1; i < argc; i++) {
@@ -87,24 +85,24 @@ Args Args::check_args (const int argc, const char** argv) {
                 if (flag == "update") {
                     if ((i+1) < args.size() && args[i+1][0] != '-') {
                         i++;
-                        arguments.flags[static_cast<size_t>(Flags::UPDATE)] = true;
-                        arguments.update_script = chomp(args[i]);
+                        Args::get.flags[static_cast<size_t>(Flags::UPDATE)] = true;
+                        Args::get.update_script = chomp(args[i]);
                     } else {
                         std::cerr << "WARNIG: word-flag '--update' was used, but no update script was specified!\n  continuing by ignoring the flag.\n";
                     }
                 } else if (flag == "log") {
                     if ((i+1) < args.size() && args[i+1][0] != '-') {
                         i++;
-                        arguments.flags[static_cast<size_t>(Flags::LOGFILE)] = true;
-                        arguments.logfile = chomp(args[i]);
+                        Args::get.flags[static_cast<size_t>(Flags::LOGFILE)] = true;
+                        Args::get.logfile = chomp(args[i]);
                     } else {
                         std::cerr << "WARNIG: word-flag '--log' was used, but no log file was specified!\n  continuing by ignoring the flag.\n";
                     }
                 } else if (flag == "log") {
                     if ((i+1) < args.size() && args[i+1][0] != '-') {
                         i++;
-                        arguments.flags[static_cast<size_t>(Flags::LOGFILE)] = true;
-                        arguments.logfile = chomp(args[i]);
+                        Args::get.flags[static_cast<size_t>(Flags::LOGFILE)] = true;
+                        Args::get.logfile = chomp(args[i]);
                     } else {
                         std::cerr << "WARNIG: word-flag '--log' was used, but no log file was specified!\n  continuing by ignoring the flag.\n";
                     }
@@ -113,29 +111,29 @@ Args Args::check_args (const int argc, const char** argv) {
                 for (int j = 1; j < akt_arg->length(); j++) {
                     switch ((*akt_arg)[j]) {
                         case 'v':
-                            arguments.flags[static_cast<size_t>(Flags::VERBOSE)] = true;
+                            Args::get.flags[static_cast<size_t>(Flags::VERBOSE)] = true;
                             break;
                         
                         case 'o':
-                            arguments.flags[static_cast<size_t>(Flags::OVERRIDE)] = true;
+                            Args::get.flags[static_cast<size_t>(Flags::OVERRIDE)] = true;
                             break;
                         
                         case 'd':
-                            arguments.flags[static_cast<size_t>(Flags::CREATE_DUMMY)] = true;
+                            Args::get.flags[static_cast<size_t>(Flags::CREATE_DUMMY)] = true;
                             break;
                         
                         case 'u':
-                            arguments.flags[static_cast<size_t>(Flags::UPDATE)] = true;
-                            arguments.update_script = "./update.sh";
+                            Args::get.flags[static_cast<size_t>(Flags::UPDATE)] = true;
+                            Args::get.update_script = "./update.sh";
                             break;
                         
                         case 's':
-                            arguments.flags[static_cast<size_t>(Flags::SCRIPT)] = true;
+                            Args::get.flags[static_cast<size_t>(Flags::SCRIPT)] = true;
                             break;
                         
                         case 'l':
-                            arguments.flags[static_cast<size_t>(Flags::LOGFILE)] = true;
-                            arguments.logfile = "./phraser.log";
+                            Args::get.flags[static_cast<size_t>(Flags::LOGFILE)] = true;
+                            Args::get.logfile = "./phraser.log";
                             break;
                         
                         case 'h':
@@ -160,24 +158,20 @@ Args Args::check_args (const int argc, const char** argv) {
         std::cerr << "WARNIG: too many Aruments!\n\tignoring all after ./phraser [<Flags>] <Source> <Destionation>\n";
     }
     
-    arguments.source = chomp(args[i]);
-    arguments.dest = chomp(args[i+1]);
+    Args::get.source = chomp(args[i]);
+    Args::get.dest = chomp(args[i+1]);
     
-    Args::logger->update(arguments);
+    Logger::out << Logger::format_flag(Args::get.flags[static_cast<size_t>(Flags::VERBOSE)], "verbose")
+                    << Logger::format_flag(Args::get.flags[static_cast<size_t>(Flags::SCRIPT)], "is script")
+                    << Logger::format_flag(Args::get.flags[static_cast<size_t>(Flags::OVERRIDE)], "override")
+                    << Logger::format_flag(Args::get.flags[static_cast<size_t>(Flags::CREATE_DUMMY)], "create dummy")
+                    << Logger::format_flag(Args::get.flags[static_cast<size_t>(Flags::LOGFILE)], "file logging", Args::get.logfile)
+                    << Logger::format_flag(Args::get.flags[static_cast<size_t>(Flags::UPDATE)], "update", Args::get.update_script)
+                    << "source:      " << Args::get.source << "\n"
+                    << "destination: " << Args::get.dest << "\n";
     
-    *(Args::logger) << Logger::format_flag(arguments.flags[static_cast<size_t>(Flags::VERBOSE)], "verbose")
-                    << Logger::format_flag(arguments.flags[static_cast<size_t>(Flags::SCRIPT)], "is script")
-                    << Logger::format_flag(arguments.flags[static_cast<size_t>(Flags::OVERRIDE)], "override")
-                    << Logger::format_flag(arguments.flags[static_cast<size_t>(Flags::CREATE_DUMMY)], "create dummy")
-                    << Logger::format_flag(arguments.flags[static_cast<size_t>(Flags::LOGFILE)], "file logging", arguments.logfile)
-                    << Logger::format_flag(arguments.flags[static_cast<size_t>(Flags::UPDATE)], "update", arguments.update_script)
-                    << "source:      " << arguments.source << "\n"
-                    << "destination: " << arguments.dest << "\n";
-    
-    if (!arguments.get(Flags::SCRIPT)) {
-        *(Args::logger) << "continue? (cancel with STRG+C) ";
+    if (!Args::get.flag(Flags::SCRIPT)) {
+        Logger::out << "continue? (cancel with STRG+C) ";
         std::cin.ignore();
     }
-    
-    return arguments;
 }

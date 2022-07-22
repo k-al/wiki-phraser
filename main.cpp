@@ -18,14 +18,10 @@
 
 int main (const int argc, const char** argv) {
     
-    Logger logger;
-    Args arguments(&logger);
+    Args::check_args(argc, argv);
     
-    arguments = Args::check_args(argc, argv);
-    
-    set_globals(logger, arguments);
     process_meta();
-    logger << "done with all meta-data\n";
+    Logger::out << "done with all meta-data\n";
     std::cout << std::endl;
     process_command();
 }

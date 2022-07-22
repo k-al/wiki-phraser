@@ -15,17 +15,20 @@ struct Args;
 enum class Flags;
 
 class Logger {
+private:
+    Logger ();
 public:
-    Args* args;
+    static Logger out;
     
-    void update (Args& args);
+    static bool to_file ();
+    static bool verbose ();
     
-    bool to_file () const;
-    bool verbose () const;
-    
-    void print_flag (const Flags& flag) const;
+    static void print_flag (const Flags& flag);
     
     static std::string format_flag (const bool& flag, const std::string& flag_name, const std::string& flag_parameter = "");
+    
+    Logger (const Logger&) = delete;
+    void operator=(const Logger&) = delete;
 };
 
 Logger& operator<< (Logger& logger, const std::string& log);
