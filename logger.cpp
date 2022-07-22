@@ -36,6 +36,7 @@ std::string Logger::format_flag (const bool& flag, const std::string& flag_name,
 Logger& operator<< (Logger& logger, const std::string& log) {
     if (logger.to_file()) {
         //! get file-handle from Logger and start writing
+        throw std::logic_error("logging to file not yet implemented!");
     } else {
         std::cout << log;
     }

@@ -3,12 +3,12 @@
 #include "phraser.hpp"
 #include "constants.hpp"
 
-static Args arguments;
-static Logger logger;
+static Args& arguments = nullptr;
+static Logger& logger = nullptr;
 
 static std::unordered_map<std::string, Entry*> entries;
 
-void set_globals (Logger& log, Args& arg) {
+void set_globals (const Logger& log, const Args& arg) {
     arguments = arg;
     logger = log;
 }

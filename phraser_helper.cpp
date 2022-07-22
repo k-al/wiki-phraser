@@ -108,6 +108,28 @@ void Command::clear () {
     this->type = CommandType::number; // setting the type to NoType
 }
 
+HtmlPathParentIterator::HtmlPathParentIterator () {}
+
+HtmlPathParentIterator::HtmlPathParentIterator (HtmlPath* path) {
+    if (path != nullptr) {
+        this->path = path;
+        this->number = 0;
+    }
+}
+
+HtmlPathParentIterator& HtmlPathParentIterator::operator++ () {
+    if (this->number < this->path->elements.size()) {
+        this->ret += "/" + this->path->elements[this->number];
+    }
+    number++;
+    
+    return *this;
+}
+
+std::string HtmlPathParentIterator::operator* () {
+    return this->ret;
+}
+
 HtmlPath::HtmlPath () {};
 
 HtmlPath::HtmlPath (fs::path fs_path, HtmlPath* offset) {
@@ -134,9 +156,15 @@ HtmlPath::HtmlPath (fs::path fs_path, HtmlPath* offset) {
         element = it->string();
         ++it;
         
-        // remove index.html/.wikiph as filenames so they point instead to the respective folder
-        if (it == fs_path.end() && (element == "index.html" || element == "index.wikiph")) {
-            break;
+        if (it == fs_path.end()) {
+            // remove index.html/.wikiph as filenames so they point instead to the respective folder
+            if (element == "index.html" || element == "index.wikiph") {
+                break;
+            
+            // remove '.wikiph' file extension, so that files wikiph's link to identical named folders
+            } else if (is_at(element, element.length() - 7, ".wikiph")) {
+                this->elements.back() = this->elements.back().substr(0, this->elements.back().length() - 7);
+            }
         }
         
         if (element == "..") {
@@ -198,19 +226,19 @@ HtmlPath::HtmlPath (std::string str_path, HtmlPath* offset) {
         pos = new_pos;
     }
     
+
     // remove index.html/.wikiph as filenames so they point instead to the respective folder
     if (this->elements.back() == "index.html" || this->elements.back() == "index.wikiph") {
         this->elements.pop_back();
+        
+    // remove '.wikiph' file extension, so that files wikiph's link to identical named folders
+    } else if (is_at(this->elements.back(), this->elements.back().length() - 7, ".wikiph")) {
+        this->elements.back() = this->elements.back().substr(0, this->elements.back().length() - 7);
     }
 }
 
-HtmlPathParentIterator::HtmlPathParentIterator () {}
-
-HtmlPathParentIterator::HtmlPathParentIterator (HtmlPath* path) {
-    if (path != nullptr) {
-        this->path = path;
-        this->number = path->elements.size();
-    }
+std::string HtmlPath::operator[] (size_t index) {
+    return this->elements[index];
 }
 
 
