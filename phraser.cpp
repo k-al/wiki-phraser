@@ -234,7 +234,12 @@ void process_command () {
         if (!it.second->phrased) {
             continue;
         }
+        
+        Logger::out < "start phrasing " < it.second->destination.string() < "\n";
+        
         StrRange work_string(it.second->content[0]);
+        
+        Logger::out << "1st StrRange constructed\n";
         
         std::array<std::stringstream, static_cast<size_t>(Entry::Block::number)> content_builder;
         
@@ -252,6 +257,8 @@ void process_command () {
                 throw std::runtime_error("Warning: No content found (forgot '$start' command?)\n");
         }
         
+        Logger::out << "1st start command suspected at pos " + std::to_string(pos) + "\n";
+        
         Command command(work_string, pos);
         
         if (command.type != Command::CommandType::Start) {
@@ -262,6 +269,8 @@ void process_command () {
                                     + std::to_string(static_cast<int>(command.type))
                                     + "\n");
         }
+        
+        Logger::out << "1st start command found\n";
         
         
         while (command.type != Command::CommandType::number) {
@@ -283,7 +292,7 @@ void process_command () {
             }
             
             /*******************************
-                * process all other commands */
+             * process all other commands */
             
             while (1) {
                 command.clear();
@@ -304,8 +313,7 @@ void process_command () {
                 } else if (work_string[0] == '\\') {
                     
                     if (work_string.length == 1) {
-                        //! TODO: extent the message with file information
-                        logger << "Warning: dubious escape character '\\' at end of file gets ignored\n";
+                        logger << "Warning: dubious escape character '\\' at end of file (" + it.second->source.string() + ") gets ignored\n";
                         break;
                     }
                     
@@ -318,8 +326,7 @@ void process_command () {
                     try {
                         command = Command(work_string, 0);
                     } catch (const std::exception& e) {
-                        //! TODO: extent the message with file information
-                        throw;
+                        throw std::runtime_error("Fatal Error in file " + it.second->source.string() + ":\n" + e.what());
                     }
                     
                     if (command.type == Command::CommandType::Start) {

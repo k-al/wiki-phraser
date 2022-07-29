@@ -3,6 +3,8 @@
 #include "constants.hpp"
 #include "phraser_helper.hpp"
 
+#include "logger.hpp"
+
 Entry::Entry () = default;
 Entry::Entry (Entry&) = default;
 Entry::Entry (Entry&&) = default;
@@ -21,33 +23,47 @@ std::pair<StrRange, StrRange> Command::get_brackets (StrRange& base, size_t pos)
     StrRange square;
     StrRange curly;
     
+    Logger::out << "got to get_brackets\n\n>>" + base.get() + "<<\n\n";
+    
     size_t bracket_pos = base.find_first_not_of(strhelp::white_chars, pos);
     
+    Logger::out << "start of first bracket suspected at " << std::to_string(bracket_pos) << "\n";
+    
     if (is_at(base, bracket_pos, "[")) {
+        Logger::out << "found start of square bracket\n";
         size_t start = bracket_pos + 1;
         pos = match_brackets(base, bracket_pos);
         
         if (pos == std::string::npos)
             throw std::runtime_error("Not matching square bracket");
         
+        Logger::out << "end of square bracket found at " << std::to_string(pos) << "\n";
+        
         square = StrRange(base, start, pos - start);
         chomp(square);
         
         pos++;
         bracket_pos = base.find_first_not_of(strhelp::white_chars, pos);
+        
+        Logger::out << "got square para. next para suspected at " << std::to_string(bracket_pos) << "\n";
     }
     
     if (is_at(base, bracket_pos, "{")) {
+        Logger::out << "found start of curly bracket\n";
         size_t start = bracket_pos + 1;
         pos = match_brackets(base, bracket_pos);
         
         if (pos == std::string::npos)
             throw std::runtime_error("Not matching curly bracket");
         
+        Logger::out << "end of curly bracket found at " << std::to_string(pos) << "\n";
+        
         curly = StrRange(base, start, pos - start);
         chomp(curly);
         
         pos++;
+        
+        Logger::out << "got square para\n";
     }
     
     base.consume_to(pos);
@@ -66,7 +82,7 @@ Command::Command (StrRange& base, size_t pos) {
     if (is_at(base, 1, "start")) {
         try {
             para = get_brackets(base, 6);
-        } catch (std::runtime_error& e) {
+        } catch (std::exception& e) {
             throw std::runtime_error(e.what() + static_cast<std::string>(" in $start command"));
         }
         this->type = CommandType::Start;
@@ -74,7 +90,7 @@ Command::Command (StrRange& base, size_t pos) {
     } else if (is_at(base, 1, "linknames")) {
         try {
             para = get_brackets(base, 10);
-        } catch (std::runtime_error& e) {
+        } catch (std::exception& e) {
             throw std::runtime_error(e.what() + static_cast<std::string>(" in $linknames command"));
         }
         this->type = CommandType::Linknames;
@@ -82,7 +98,7 @@ Command::Command (StrRange& base, size_t pos) {
     } else if (is_at(base, 1, "link")) {
         try {
             para = get_brackets(base, 5);
-        } catch (std::runtime_error& e) {
+        } catch (std::exception& e) {
             throw std::runtime_error(e.what() + static_cast<std::string>(" in $link command"));
         }
         this->type = CommandType::Link;
@@ -90,7 +106,7 @@ Command::Command (StrRange& base, size_t pos) {
     } else if (is_at(base, 1, "time")) {
         try {
             para = get_brackets(base, 5);
-        } catch (std::runtime_error& e) {
+        } catch (std::exception& e) {
             throw std::runtime_error(e.what() + static_cast<std::string>(" in $time command"));
         }
         this->type = CommandType::Time;

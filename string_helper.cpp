@@ -3,6 +3,8 @@
 #include <sstream>
 #include "string_helper.hpp"
 
+// #include "logger.hpp"
+
 
 StrRange::StrRange () {
     this->base = nullptr;
@@ -11,11 +13,19 @@ StrRange::StrRange () {
 }
 
 StrRange::StrRange (const std::string& base, size_t start, size_t length = std::string::npos) {
+//     Logger::out << "StrRange: got string of length " << std::to_string(base.length())
+//         << " and construct a range from " << std::to_string(start)
+//         << " with length of " << (length == std::string::npos ? "infinty" : std::to_string(length)) << "\n";
+    
     if (length == std::string::npos) {
         length = base.length() - start;
-        
-    //! integer overflow vunerable
-    } else if (base.size() < (start + length)) {
+    }
+    
+    if (start + length < start) {
+        throw std::length_error("Range constructed out of range of base string (base + length overflow)");
+    }
+    
+    if (base.size() < (start + length)) {
         throw std::length_error("Range constructed out of range of base string");
     }
     
@@ -25,11 +35,19 @@ StrRange::StrRange (const std::string& base, size_t start, size_t length = std::
 }
 
 StrRange::StrRange (const StrRange& base, size_t start, size_t length = std::string::npos) {
+//     Logger::out << "StrRange: got range of length " << std::to_string(base.length)
+//         << " and construct a range from " << std::to_string(start)
+//         << " with length of " << (length == std::string::npos ? "infinty" : std::to_string(length)) << "\n";
+    
     if (length == std::string::npos) {
         length = base.length - start;
-        
-    //! integer overflow vunerable
-    } else if (base.contains_index(start + length)) {
+    }
+    
+    if (start + length < start) {
+        throw std::length_error("Range constructed out of range of base string (base + length overflow)");
+    }
+    
+    if (base.length < (start + length)) {
         throw std::length_error("Range constructed out of range of base string-range");
     }
     
