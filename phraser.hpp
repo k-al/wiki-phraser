@@ -30,7 +30,7 @@ void command_time (std::stringstream& out_stream, const Command& command, const 
 
 /**
  * iterate through the Entrystructure to find and replace the commands in the phraseable files with html tags\n
- * calls at a found command the secific 'comand_xxx()'
+ * calls at a found command the specific 'comand_xxx()'
  */
 void process_command ();
 

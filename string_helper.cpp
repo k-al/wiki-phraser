@@ -106,6 +106,7 @@ size_t StrRange::find_first_of (char match, size_t pos) const {
 size_t StrRange::find_first_of (std::string match, size_t pos) const {
     for (size_t i = pos; this->contains_index(pos); i++) {
         for (auto match_it = match.cbegin(); match_it != match.cend(); match_it++) {
+//             Logger::out << "[" << std::to_string(i) << "]" << (*this)[i] + " <-> " + *match_it << ((*this)[i] == *match_it ? "true\n" : "false\n");
             if ((*this)[i] == *match_it)
                 return i;
         }
@@ -319,7 +320,7 @@ size_t match_brackets (const std::string& string, size_t start_bracket) {
         return std::string::npos;
     }
 
-    const std::string brackets(start_b, end_b);
+    const std::string brackets = {start_b, end_b};
     size_t pos = string.find_first_of(brackets, start_bracket + 1);
 
     while (string[pos] == start_b) {
@@ -352,7 +353,7 @@ size_t match_brackets (const StrRange& string, size_t start_bracket) {
         return std::string::npos;
     }
 
-    const std::string brackets(start_b, end_b);
+    const std::string brackets = {start_b, end_b};
     size_t pos = string.find_first_of(brackets, start_bracket + 1);
 
     while (string[pos] == start_b) {

@@ -163,7 +163,7 @@ void command_time (std::stringstream& out_stream, const Command& command, const 
         try {
             time = active_entry->tags.at("time");
         } catch (const std::out_of_range& oor) {
-            throw std::runtime_error("Error: '$time' command got not passed in the time in a file without a 'time' tag");
+            throw std::runtime_error("Error: '$time' command got not passed the time in a file without a 'time' tag");
         }
     } else {
         // get time from parameter
@@ -273,7 +273,7 @@ void process_command () {
         Logger::out << "1st start command found\n";
         
         
-        while (command.type != Command::CommandType::number) {
+        while (command.type == Command::CommandType::Start) {
             
             /********************************
             * process the '$start' command */
@@ -295,11 +295,13 @@ void process_command () {
              * process all other commands */
             
             while (1) {
+                logger << "Start of the per command loop\n";
                 command.clear();
                 pos = work_string.find_first_of("\n$\\");
                 
-                if (pos = std::string::npos) {
+                if (pos == std::string::npos) {
                     content_builder[static_cast<size_t>(active_block)] << work_string.get();
+                    logger << "found no new command in" + work_string.get() + "\n";
                     break;
                 }
                 StrRange append = work_string.consume_to(pos); // does not get found char
@@ -330,6 +332,7 @@ void process_command () {
                     }
                     
                     if (command.type == Command::CommandType::Start) {
+                        logger << "found new start command\n";
                         break;
                     }
                     
@@ -343,13 +346,13 @@ void process_command () {
                     }
                     
                 } else {
-                    //! TODO: extent the message with file information
                     throw std::runtime_error("Error: somethig went really wrong:\n\tsearched for '\\', '\\n' or '$' but found '"
                                         + std::string(1, work_string[0])
-                                        + "'\n");
+                                        + "' in file " + it.second->source.string() + "\n");
                 }
             }
         }
+        Logger::out << "ready with file\n";
         return;
     }
 }

@@ -23,8 +23,6 @@ std::pair<StrRange, StrRange> Command::get_brackets (StrRange& base, size_t pos)
     StrRange square;
     StrRange curly;
     
-    Logger::out << "got to get_brackets\n\n>>" + base.get() + "<<\n\n";
-    
     size_t bracket_pos = base.find_first_not_of(strhelp::white_chars, pos);
     
     Logger::out << "start of first bracket suspected at " << std::to_string(bracket_pos) << "\n";
@@ -63,7 +61,7 @@ std::pair<StrRange, StrRange> Command::get_brackets (StrRange& base, size_t pos)
         
         pos++;
         
-        Logger::out << "got square para\n";
+        Logger::out << "got curly para\n";
     }
     
     base.consume_to(pos);
@@ -78,6 +76,8 @@ Command::Command (StrRange& base, size_t pos) {
     
     if (base[0] != '$')
         throw std::runtime_error("Command doesn't start with '$'");
+
+    Logger::out << "Comand at start of >" << StrRange(base, pos, base.length).get() << "<\n";
     
     if (is_at(base, 1, "start")) {
         try {
