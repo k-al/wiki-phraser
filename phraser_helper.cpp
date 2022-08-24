@@ -68,6 +68,11 @@ std::pair<StrRange, StrRange> Command::get_brackets (StrRange& base, size_t pos)
     return std::pair<StrRange, StrRange>(square, curly);
 }
 
+Command::Command () {
+    this->square_para = StrRange();
+    this->curly_para = StrRange();
+    this->type = CommandType::number;
+}
 
 Command::Command (StrRange& base, size_t pos) {
     std::pair<StrRange, StrRange> para;

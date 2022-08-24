@@ -151,6 +151,10 @@ void process_meta () {
     }
 }
 
+void command_section (std::stringstream& out_stream, const Command& command, const Entry* active_entry) {
+
+}
+
 void command_link (std::stringstream& out_stream, const Command& command, const Entry* active_entry) {
     
 }
@@ -228,7 +232,7 @@ void command_time (std::stringstream& out_stream, const Command& command, const 
 }
 
 
-void process_command () {
+void process_commands () {
     for (std::pair<std::string, Entry*> it : entries) {
         // if not wikiph: skip
         if (!it.second->phrased) {
@@ -294,65 +298,77 @@ void process_command () {
             /*******************************
              * process all other commands */
             
-            while (1) {
-                logger << "Start of the per command loop\n";
-                command.clear();
-                pos = work_string.find_first_of("\n$\\");
-                
-                if (pos == std::string::npos) {
-                    content_builder[static_cast<size_t>(active_block)] << work_string.get();
-                    logger << "found no new command in" + work_string.get() + "\n";
-                    break;
-                }
-                StrRange append = work_string.consume_to(pos); // does not get found char
-                content_builder[static_cast<size_t>(active_block)] << append.get();
-                
-                if (work_string[0] == '\n') {
-                    
-                    content_builder[static_cast<size_t>(active_block)] << html_newline();
-                    work_string.consume_to(1); // remove the newline
-                    
-                } else if (work_string[0] == '\\') {
-                    
-                    if (work_string.length == 1) {
-                        logger << "Warning: dubious escape character '\\' at end of file (" + it.second->source.string() + ") gets ignored\n";
-                        break;
-                    }
-                    
-                    content_builder[static_cast<size_t>(active_block)] << work_string[1];
-                    work_string.consume_to(2);
-                    
-                } else if (work_string[0] == '$') {
-                    
-                    
-                    try {
-                        command = Command(work_string, 0);
-                    } catch (const std::exception& e) {
-                        throw std::runtime_error("Fatal Error in file " + it.second->source.string() + ":\n" + e.what());
-                    }
-                    
-                    if (command.type == Command::CommandType::Start) {
-                        logger << "found new start command\n";
-                        break;
-                    }
-                    
-                    switch (command.type) {
-                        case Command::CommandType::Link:
-                            command_link(content_builder[static_cast<size_t>(active_block)], command, it.second);
-                            break;
-                            
-                        case Command::CommandType::Time:
-                            command_time(content_builder[static_cast<size_t>(active_block)], command, it.second);
-                    }
-                    
-                } else {
-                    throw std::runtime_error("Error: somethig went really wrong:\n\tsearched for '\\', '\\n' or '$' but found '"
-                                        + std::string(1, work_string[0])
-                                        + "' in file " + it.second->source.string() + "\n");
-                }
-            }
+            command = process_command(content_builder[static_cast<size_t>(active_block)], work_string, it.second);
         }
         Logger::out << "ready with file\n";
         return;
+    }
+}
+
+/**
+ * proceses command until next $start command (incl.) or until end of work_string\n
+ * @param out_stream the stream the final result gets passed
+ * @param work_string string input
+ * @param active_entry pointer to the entry associated with @param work_string to look up metadata
+ * @return start command if found and empty command (CommandType = number) otherwise
+ */
+Command process_command (std::stringstream& out_stream, StrRange& work_string, const Entry* active_entry) {
+    Command command;
+    while (1) {
+        logger << "Start of the per command loop\n";
+        command.clear();
+        size_t pos = work_string.find_first_of("\n$\\");
+
+        if (pos == std::string::npos) {
+            out_stream << work_string.get();
+            logger << "found no new command in" + work_string.get() + "\n";
+            return Command();
+        }
+        StrRange append = work_string.consume_to(pos); // does not get found char
+        out_stream << append.get();
+
+        if (work_string[0] == '\n') {
+
+            out_stream << html_newline();
+            work_string.consume_to(1); // remove the newline
+
+        } else if (work_string[0] == '\\') {
+
+            if (work_string.length == 1) {
+                logger << "Warning: dubious escape character '\\' at end of file (" + active_entry->source.string() + ") gets ignored\n";
+                return Command();
+            }
+
+            out_stream << work_string[1];
+            work_string.consume_to(2);
+
+        } else if (work_string[0] == '$') {
+
+
+            try {
+                command = Command(work_string, 0);
+            } catch (const std::exception& e) {
+                throw std::runtime_error("Fatal Error in file " + active_entry->source.string() + ":\n" + e.what());
+            }
+
+            if (command.type == Command::CommandType::Start) {
+                logger << "found new start command\n";
+                return command;
+            }
+
+            switch (command.type) {
+                case Command::CommandType::Link:
+                    command_link(out_stream, command, active_entry);
+                    break;
+
+                case Command::CommandType::Time:
+                    command_time(out_stream, command, active_entry);
+            }
+
+        } else {
+            throw std::runtime_error("Error: somethig went really wrong:\n\tsearched for '\\', '\\n' or '$' but found '"
+            + std::string(1, work_string[0])
+            + "' in file " + active_entry->source.string() + "\n");
+        }
     }
 }

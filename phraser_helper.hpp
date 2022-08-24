@@ -56,6 +56,7 @@ struct Command {
     
     static std::pair<StrRange, StrRange> get_brackets (StrRange& base, size_t pos);
     
+    Command ();
     Command (StrRange& base, size_t pos);
     void clear ();
 };

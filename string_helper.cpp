@@ -320,7 +320,7 @@ size_t match_brackets (const std::string& string, size_t start_bracket) {
         return std::string::npos;
     }
 
-    const std::string brackets = {start_b, end_b};
+    const std::string brackets = {end_b, start_b};
     size_t pos = string.find_first_of(brackets, start_bracket + 1);
 
     while (string[pos] == start_b) {
@@ -353,7 +353,7 @@ size_t match_brackets (const StrRange& string, size_t start_bracket) {
         return std::string::npos;
     }
 
-    const std::string brackets = {start_b, end_b};
+    const std::string brackets = {end_b, start_b};
     size_t pos = string.find_first_of(brackets, start_bracket + 1);
 
     while (string[pos] == start_b) {

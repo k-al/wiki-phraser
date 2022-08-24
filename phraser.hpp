@@ -25,6 +25,7 @@ void process_meta_single (Entry* file);
 void process_meta ();
 
 
+void command_section (std::stringstream& out_stream, const Command& command, const Entry* active_entry);
 void command_link (std::stringstream& out_stream, const Command& command, const Entry* active_entry);
 void command_time (std::stringstream& out_stream, const Command& command, const Entry* active_entry);
 
@@ -32,6 +33,7 @@ void command_time (std::stringstream& out_stream, const Command& command, const 
  * iterate through the Entrystructure to find and replace the commands in the phraseable files with html tags\n
  * calls at a found command the specific 'comand_xxx()'
  */
-void process_command ();
+void process_commands ();
+Command process_command (std::stringstream& out_stream, StrRange& work_string, const Entry* active_entry);
 
 #endif

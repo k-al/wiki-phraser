@@ -22,5 +22,5 @@ int main (const int argc, const char** argv) {
     
     process_meta();
     Logger::out << "done with all meta-data\n";
-    process_command();
+    process_commands();
 }
