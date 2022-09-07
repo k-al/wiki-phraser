@@ -151,12 +151,26 @@ void process_meta () {
     }
 }
 
-void command_section (std::stringstream& out_stream, const Command& command, const Entry* active_entry) {
+void command_section (std::stringstream& out_stream, Command& command, const Entry* active_entry) {
+    if (command.square_para.length != 0) {
+        out_stream << "<h3 class=\"section_head\">" << command.square_para.get() << "</h3></br>\n";
+    }
+    out_stream << "<div class=\"section_body\">\n";
 
+
+    process_command(out_stream, command.curly_para, active_entry);
+
+    out_stream << "</div>\n";
 }
 
 void command_link (std::stringstream& out_stream, const Command& command, const Entry* active_entry) {
-    
+    if (command.square_para.length == 0) {
+        throw std::runtime_error("Error: '$link' command did not get a linking path as square para");
+    }
+    HtmlPath start_path = HtmlPath(active_entry->source); //! here should be the rel path
+    HtmlPath linked_path = HtmlPath(command.square_para.get(), &start_path);
+
+
 }
 
 void command_time (std::stringstream& out_stream, const Command& command, const Entry* active_entry) {
@@ -363,6 +377,11 @@ Command process_command (std::stringstream& out_stream, StrRange& work_string, c
 
                 case Command::CommandType::Time:
                     command_time(out_stream, command, active_entry);
+                    break;
+
+                case Command::CommandType::Section:
+                    command_section(out_stream, command, active_entry);
+                    break;
             }
 
         } else {

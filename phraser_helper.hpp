@@ -46,16 +46,17 @@ struct Command {
         Listall,
         List,
         Tag,
-        
+        Section,
+
         number
     };
-    
+
     StrRange square_para;
     StrRange curly_para;
     CommandType type;
-    
+
     static std::pair<StrRange, StrRange> get_brackets (StrRange& base, size_t pos);
-    
+
     Command ();
     Command (StrRange& base, size_t pos);
     void clear ();
@@ -91,6 +92,7 @@ struct HtmlPath {
     
     void make_absolute ();
     HtmlPath path_to (HtmlPath dest);
+    std::string get ();
 };
 
 

@@ -1,4 +1,4 @@
-
+#include <set>
 
 #include "constants.hpp"
 #include "phraser_helper.hpp"
@@ -116,6 +116,12 @@ Command::Command (StrRange& base, size_t pos) {
         }
         this->type = CommandType::Time;
         
+    } else if (is_at(base, 1, "section")) {
+        try {
+            para = get_brackets(base, 8);
+        } catch (std::exception& e) {
+            throw std::runtime_error(e.what() + static_cast<std::string>(" in $section command"));
+        }
     } else {
         StrRange command(base, 0, base.find_first_not_of(strhelp::word_chars, 1));
         throw std::runtime_error("Unknown command '" + command.get() + "'");
@@ -260,6 +266,69 @@ HtmlPath::HtmlPath (std::string str_path, HtmlPath* offset) {
 
 std::string HtmlPath::operator[] (size_t index) {
     return this->elements[index];
+}
+
+void HtmlPath::make_absolute () {
+
+    { // checking for cycles in path-relativity
+        std::set<HtmlPath*> added_paths;
+        HtmlPath* drag_pointer = this;
+
+        while (drag_pointer != nullptr) {
+            std::pair<std::_Rb_tree_const_iterator<HtmlPath*>, bool> ret = added_paths.insert(drag_pointer);
+            if (!ret.second) {
+                throw std::runtime_error("Error: tried to make cycling path absolute\n First cycling element: " + drag_pointer->get());
+            }
+            drag_pointer = drag_pointer->relative_to;
+        }
+    }
+    {
+        HtmlPath* drag_pointer = this->relative_to;
+        while (drag_pointer != nullptr) {
+            auto front = this->elements.begin();
+            auto back = drag_pointer->elements.rbegin();
+            size_t canceled_folders = 0;
+
+            // test how many folders from drag_pointer->elements are went up by this->elements
+            while (front != this->elements.end() && *front == ".." && back != drag_pointer->elements.rend() && *back != "..") {
+                front++;
+                back++;
+                canceled_folders++;
+            }
+
+            size_t new_vector_size = this->elements.size() + drag_pointer->elements.size() - 2 * canceled_folders;
+
+            std::vector<std::string> new_vector(new_vector_size);
+
+            // copy the relevant entrys from drag_pointer->elements
+            size_t offset = 0;
+            for (; offset < drag_pointer->elements.size() - canceled_folders; ++offset) {
+                new_vector[offset] = drag_pointer->elements[offset];
+            }
+
+            // copy the relevant entrys from this->elements
+            for (size_t i = 0; i < this->elements.size() - canceled_folders; i++) {
+                swap(new_vector[offset + i], this->elements[canceled_folders + i]);
+            }
+
+            swap(this->elements, new_vector);
+
+            drag_pointer = drag_pointer->relative_to;
+        }
+    }
+}
+
+std::string HtmlPath::get () {
+    std::string ret;
+    if (this->relative_to != nullptr) {
+        ret += ".";
+    }
+
+    for (std::string el : this->elements) {
+        ret += "/" + el;
+    }
+
+    return ret;
 }
 
 

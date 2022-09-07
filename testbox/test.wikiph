@@ -5,7 +5,7 @@ gruppe:mandrio, baihu, balasar, ulfgard, kairon
 time:1138, 05, 00
 $start{main}
 
-$subsection[DM:]{Fünti}
+$section[DM:]{Fünti}
 
 $list[Die Gruppe]{$linknames[$tags{gruppe}]}
 
