@@ -9,9 +9,9 @@ static Logger& logger = Logger::out;
 static std::unordered_map<std::string, Entry*> entries;
 
 
-void process_meta_single (Entry* file) {
-    logger < "\n\nopen and read " < file->source.string() < "\n";
-    const std::string buff = read_file(file->source);
+void process_meta_single (Entry* file, fs::path file_source) {
+    logger < "\n\nopen and read " < file_source.string() < "\n";
+    const std::string buff = read_file(file_source);
     logger < "get all meta-data\n";
     
     size_t position = 0;
@@ -25,7 +25,7 @@ void process_meta_single (Entry* file) {
         first_tag = buff.find_first_of(":", position);
 
         if (first_command == std::string::npos) {
-            logger << RED << "ERROR: no content section in " << file->source.string() << "\n" << RESET << "\tforgot $start command?\n";
+            logger << RED << "ERROR: no content section in " << file_source.string() << "\n" << RESET << "\tforgot $start command?\n";
             //? instead of exiting, continue with next file
             exit(1);
         } else if (first_tag < first_command) {
@@ -58,7 +58,7 @@ void process_meta_single (Entry* file) {
             } else if (is_at(buff, first_command + 1, "no_default_linknames")) {
                 default_linknames = false;
             } else {
-                logger << RED << "ERROR: incorrect command in meta-section in " << file->source.string() << ":" << RESET
+                logger << RED << "ERROR: incorrect command in meta-section in " << file->rel_path.get() << ":" << RESET
                         << " >$" << buff.substr(first_command, buff.find_first_not_of(strhelp::word_chars, first_command) - first_command) << "<\n";
                 //? instead of exiting, continue with next file
                 exit(1);
@@ -103,20 +103,24 @@ void process_meta () {
         
         if (dir_entry.is_regular_file()) {
             Entry* new_file = new Entry();
-            new_file->source = dir_entry.path();
-            new_file->destination = dest_path;
+            // new_file->source = dir_entry.path();
+            // new_file->destination = dest_path;
+                logger < "hey1\n";
+            HtmlPath tmp = HtmlPath(rel_path);
+                logger < "hey2\n";
+            new_file->rel_path = tmp;
 
 
             entries.insert(std::pair<fs::path, Entry*>(rel_path.string(), new_file));
-            
-            
+
+
             if (rel_path.extension() == ".wikiph") {
                 dest_path.replace_extension("html");
-                new_file->destination = dest_path; // update struct
+                // new_file->destination = dest_path; // update struct
                 new_file->phrased = true;
                 logger < "Is a phrasable file and will be phrased to " < dest_path < "\n";
                 
-                process_meta_single(new_file);
+                process_meta_single(new_file, dir_entry.path());
                 
             } else {
                 logger < "is '" < rel_path.extension() < "' file and will be copied to " < dest_path < "\n";
@@ -167,8 +171,9 @@ void command_link (std::stringstream& out_stream, const Command& command, const 
     if (command.square_para.length == 0) {
         throw std::runtime_error("Error: '$link' command did not get a linking path as square para");
     }
-    HtmlPath start_path = HtmlPath(active_entry->source); //! here should be the rel path
+    HtmlPath start_path = HtmlPath(active_entry->rel_path);
     HtmlPath linked_path = HtmlPath(command.square_para.get(), &start_path);
+    linked_path.make_absolute();
 
 
 }
@@ -253,11 +258,11 @@ void process_commands () {
             continue;
         }
         
-        Logger::out < "start phrasing " < it.second->destination.string() < "\n";
+        Logger::out < "start phrasing " < it.second->rel_path.get() < "\n";
         
         StrRange work_string(it.second->content[0]);
         
-        Logger::out << "1st StrRange constructed\n";
+        // Logger::out << "1st StrRange constructed\n";
         
         std::array<std::stringstream, static_cast<size_t>(Entry::Block::number)> content_builder;
         
@@ -275,7 +280,7 @@ void process_commands () {
                 throw std::runtime_error("Warning: No content found (forgot '$start' command?)\n");
         }
         
-        Logger::out << "1st start command suspected at pos " + std::to_string(pos) + "\n";
+        // Logger::out << "1st start command suspected at pos " + std::to_string(pos) + "\n";
         
         Command command(work_string, pos);
         
@@ -288,7 +293,7 @@ void process_commands () {
                                     + "\n");
         }
         
-        Logger::out << "1st start command found\n";
+        // Logger::out << "1st start command found\n";
         
         
         while (command.type == Command::CommandType::Start) {
@@ -329,13 +334,13 @@ void process_commands () {
 Command process_command (std::stringstream& out_stream, StrRange& work_string, const Entry* active_entry) {
     Command command;
     while (1) {
-        logger << "Start of the per command loop\n";
+        // logger << "Start of the per command loop\n";
         command.clear();
         size_t pos = work_string.find_first_of("\n$\\");
 
         if (pos == std::string::npos) {
             out_stream << work_string.get();
-            logger << "found no new command in" + work_string.get() + "\n";
+            // logger << "found no new command in" + work_string.get() + "\n";
             return Command();
         }
         StrRange append = work_string.consume_to(pos); // does not get found char
@@ -349,7 +354,7 @@ Command process_command (std::stringstream& out_stream, StrRange& work_string, c
         } else if (work_string[0] == '\\') {
 
             if (work_string.length == 1) {
-                logger << "Warning: dubious escape character '\\' at end of file (" + active_entry->source.string() + ") gets ignored\n";
+                logger << "Warning: dubious escape character '\\' at end of file (" + active_entry->rel_path.get() + ") gets ignored\n";
                 return Command();
             }
 
@@ -362,11 +367,11 @@ Command process_command (std::stringstream& out_stream, StrRange& work_string, c
             try {
                 command = Command(work_string, 0);
             } catch (const std::exception& e) {
-                throw std::runtime_error("Fatal Error in file " + active_entry->source.string() + ":\n" + e.what());
+                throw std::runtime_error("Fatal Error in file " + active_entry->rel_path.get() + ":\n" + e.what());
             }
 
             if (command.type == Command::CommandType::Start) {
-                logger << "found new start command\n";
+                // logger << "found new start command\n";
                 return command;
             }
 
@@ -387,7 +392,7 @@ Command process_command (std::stringstream& out_stream, StrRange& work_string, c
         } else {
             throw std::runtime_error("Error: somethig went really wrong:\n\tsearched for '\\', '\\n' or '$' but found '"
             + std::string(1, work_string[0])
-            + "' in file " + active_entry->source.string() + "\n");
+            + "' in file " + active_entry->rel_path.get() + "\n");
         }
     }
 }

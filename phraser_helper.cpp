@@ -4,6 +4,7 @@
 #include "phraser_helper.hpp"
 
 #include "logger.hpp"
+static Logger& logger = Logger::out;
 
 Entry::Entry () = default;
 Entry::Entry (Entry&) = default;
@@ -25,17 +26,17 @@ std::pair<StrRange, StrRange> Command::get_brackets (StrRange& base, size_t pos)
     
     size_t bracket_pos = base.find_first_not_of(strhelp::white_chars, pos);
     
-    Logger::out << "start of first bracket suspected at " << std::to_string(bracket_pos) << "\n";
+    // Logger::out << "start of first bracket suspected at " << std::to_string(bracket_pos) << "\n";
     
     if (is_at(base, bracket_pos, "[")) {
-        Logger::out << "found start of square bracket\n";
+        // Logger::out << "found start of square bracket\n";
         size_t start = bracket_pos + 1;
         pos = match_brackets(base, bracket_pos);
         
         if (pos == std::string::npos)
             throw std::runtime_error("Not matching square bracket");
         
-        Logger::out << "end of square bracket found at " << std::to_string(pos) << "\n";
+        // Logger::out << "end of square bracket found at " << std::to_string(pos) << "\n";
         
         square = StrRange(base, start, pos - start);
         chomp(square);
@@ -43,25 +44,25 @@ std::pair<StrRange, StrRange> Command::get_brackets (StrRange& base, size_t pos)
         pos++;
         bracket_pos = base.find_first_not_of(strhelp::white_chars, pos);
         
-        Logger::out << "got square para. next para suspected at " << std::to_string(bracket_pos) << "\n";
+        // Logger::out << "got square para. next para suspected at " << std::to_string(bracket_pos) << "\n";
     }
     
     if (is_at(base, bracket_pos, "{")) {
-        Logger::out << "found start of curly bracket\n";
+        // Logger::out << "found start of curly bracket\n";
         size_t start = bracket_pos + 1;
         pos = match_brackets(base, bracket_pos);
         
         if (pos == std::string::npos)
             throw std::runtime_error("Not matching curly bracket");
         
-        Logger::out << "end of curly bracket found at " << std::to_string(pos) << "\n";
+        // Logger::out << "end of curly bracket found at " << std::to_string(pos) << "\n";
         
         curly = StrRange(base, start, pos - start);
         chomp(curly);
         
         pos++;
         
-        Logger::out << "got curly para\n";
+        // Logger::out << "got curly para\n";
     }
     
     base.consume_to(pos);
@@ -82,7 +83,7 @@ Command::Command (StrRange& base, size_t pos) {
     if (base[0] != '$')
         throw std::runtime_error("Command doesn't start with '$'");
 
-    Logger::out << "Comand at start of >" << StrRange(base, pos, base.length).get() << "<\n";
+    // Logger::out << "Comand at start of >" << StrRange(base, pos, base.length).get() << "<\n";
     
     if (is_at(base, 1, "start")) {
         try {
@@ -178,30 +179,29 @@ HtmlPath::HtmlPath (fs::path fs_path, HtmlPath* offset) {
         this->relative_to = offset;
     }
     
-    std::string element;
     while (it != fs_path.end()) {
-        element = it->string();
+        this->elements.push_back(it->string());
         ++it;
-        
+
+
         if (it == fs_path.end()) {
             // remove index.html/.wikiph as filenames so they point instead to the respective folder
-            if (element == "index.html" || element == "index.wikiph") {
+            if (this->elements.back().compare("index.html") == 0 || this->elements.back().compare("index.wikiph") == 0) {
                 break;
-            
+
             // remove '.wikiph' file extension, so that files wikiph's link to identical named folders
-            } else if (is_at(element, element.length() - 7, ".wikiph")) {
+            } else if (is_at(this->elements.back(), this->elements.back().length() - 7, ".wikiph")) {
                 this->elements.back() = this->elements.back().substr(0, this->elements.back().length() - 7);
             }
         }
-        
-        if (element == "..") {
+
+        if (this->elements.back() == "..") {
             if (this->elements.size() != 0 && this->elements.back() != "..") {
                 this->elements.pop_back();
                 continue;
             }
         }
-        
-        this->elements.push_back(element);
+
     }
 }
 
@@ -318,13 +318,13 @@ void HtmlPath::make_absolute () {
     }
 }
 
-std::string HtmlPath::get () {
+std::string HtmlPath::get () const {
     std::string ret;
     if (this->relative_to != nullptr) {
         ret += ".";
     }
 
-    for (std::string el : this->elements) {
+    for (const std::string& el : this->elements) {
         ret += "/" + el;
     }
 

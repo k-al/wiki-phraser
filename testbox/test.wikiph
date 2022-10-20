@@ -7,7 +7,7 @@ $start{main}
 
 $section[DM:]{Fünti}
 
-$list[Die Gruppe]{$linknames[$tags{gruppe}]}
+\$list[Die Gruppe]{$linknames[$tags{gruppe}]}
 
 $time{}
 

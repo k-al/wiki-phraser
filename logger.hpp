@@ -27,12 +27,33 @@ public:
     
     static std::string format_flag (const bool& flag, const std::string& flag_name, const std::string& flag_parameter = "");
     
+    bool operator&& (const bool& operant) const;
+
     Logger (const Logger&) = delete;
     void operator=(const Logger&) = delete;
 };
 
 Logger& operator<< (Logger& logger, const std::string& log);
+Logger& operator<< (Logger& logger, const long long& log);
+Logger& operator<< (Logger& logger, const long& log);
+Logger& operator<< (Logger& logger, const int& log);
+Logger& operator<< (Logger& logger, const short& log);
+Logger& operator<< (Logger& logger, const unsigned long long& log);
+Logger& operator<< (Logger& logger, const unsigned long& log);
+Logger& operator<< (Logger& logger, const unsigned int& log);
+Logger& operator<< (Logger& logger, const unsigned short& log);
 
 Logger& operator< (Logger& logger, const std::string& log);
+Logger& operator< (Logger& logger, const long long& log);
+Logger& operator< (Logger& logger, const long& log);
+Logger& operator< (Logger& logger, const int& log);
+Logger& operator< (Logger& logger, const short& log);
+Logger& operator< (Logger& logger, const unsigned long long& log);
+Logger& operator< (Logger& logger, const unsigned long& log);
+Logger& operator< (Logger& logger, const unsigned int& log);
+Logger& operator< (Logger& logger, const unsigned short& log);
+
+bool operator&& (Logger& logger, const bool& operant);
+
 
 #endif

@@ -11,6 +11,42 @@
 
 namespace fs = std::filesystem;
 
+
+struct HtmlPath;
+
+struct HtmlPathParentIterator {
+    HtmlPath* path = nullptr;
+    size_t number = 0;
+    std::string ret;
+
+    HtmlPathParentIterator();
+    HtmlPathParentIterator(HtmlPath* path);
+
+    HtmlPathParentIterator& operator++ ();
+    bool operator!= (const HtmlPathParentIterator& other);
+    std::string operator* ();
+};
+
+struct HtmlPath {
+    HtmlPath* relative_to = nullptr;
+    std::vector<std::string> elements;
+
+    HtmlPath ();
+    HtmlPath (fs::path fs_path, HtmlPath* offset = nullptr);
+    HtmlPath (std::string str_path, HtmlPath* offset = nullptr);
+
+    std::string operator[] (size_t index);
+
+    HtmlPathParentIterator begin();
+    HtmlPathParentIterator end();
+
+    void make_absolute ();
+    HtmlPath path_to (HtmlPath dest);
+    std::string get () const;
+};
+
+
+
 struct Entry {
     enum class Block {
         Main = 0,
@@ -23,8 +59,9 @@ struct Entry {
 
     bool phrased = false;
     bool directory = false;
-    fs::path source;
-    fs::path destination;
+    // fs::path source;
+    // fs::path destination;
+    HtmlPath rel_path;
 //     std::unordered_set<std::string> links; // set of paths that Entry links to
     std::unordered_map<std::string, std::vector<std::string>> tags;
     std::array<std::string, static_cast<size_t>(Block::number)> content;
@@ -61,40 +98,6 @@ struct Command {
     Command (StrRange& base, size_t pos);
     void clear ();
 };
-
-struct HtmlPath;
-
-struct HtmlPathParentIterator {
-    HtmlPath* path = nullptr;
-    size_t number = 0;
-    std::string ret;
-    
-    HtmlPathParentIterator();
-    HtmlPathParentIterator(HtmlPath* path);
-    
-    HtmlPathParentIterator& operator++ ();
-    bool operator!= (const HtmlPathParentIterator& other);
-    std::string operator* ();
-};
-
-struct HtmlPath {
-    HtmlPath* relative_to = nullptr;
-    std::vector<std::string> elements;
-    
-    HtmlPath ();
-    HtmlPath (fs::path fs_path, HtmlPath* offset = nullptr);
-    HtmlPath (std::string str_path, HtmlPath* offset = nullptr);
-    
-    std::string operator[] (size_t index);
-    
-    HtmlPathParentIterator begin();
-    HtmlPathParentIterator end();
-    
-    void make_absolute ();
-    HtmlPath path_to (HtmlPath dest);
-    std::string get ();
-};
-
 
 std::string html_newline ();
 

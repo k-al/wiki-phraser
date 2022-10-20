@@ -14,7 +14,7 @@ void set_globals (Logger&, Args&);
  * also places the command section in content at pos 0
  * @param file the file Entry to phrase
  */
-void process_meta_single (Entry* file);
+void process_meta_single (Entry* file, fs::path file_source);
 
 
 /**

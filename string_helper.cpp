@@ -3,7 +3,8 @@
 #include <sstream>
 #include "string_helper.hpp"
 
-// #include "logger.hpp"
+#include "logger.hpp"
+static Logger& logger = Logger::out;
 
 
 StrRange::StrRange () {
@@ -379,13 +380,18 @@ size_t match_brackets (const StrRange& string, size_t start_bracket) {
  * @return true if and only if @param string at position @param pos reads @param match
  */
 bool is_at (const std::string& string, size_t pos, const std::string& match) {
+logger < "got into is_at(" < string < " | " < match < ") at " < pos < "\n";
     if ((pos + match.size()) > string.size())
         return false;
     
+// logger < "match size " < match.size() < "\n";
     for (size_t i = 0; i < match.size(); i++) {
+// logger < "number " < i < "\n";
+// logger < " m:" < match[i] < " s:" < string[pos + i] < "\n";
         if (match[i] != string[pos + i])
             return false;
     }
+logger < "ready\n";
     return true;
 }
 

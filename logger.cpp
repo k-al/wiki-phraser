@@ -35,9 +35,77 @@ Logger& operator<< (Logger& logger, const std::string& log) {
     return logger;
 }
 
+Logger& operator<< (Logger& logger, const long long& log) {
+    return logger << std::to_string(log);
+}
+
+Logger& operator<< (Logger& logger, const long& log) {
+    return logger << std::to_string(log);
+}
+
+Logger& operator<< (Logger& logger, const int& log) {
+    return logger << std::to_string(log);
+}
+
+Logger& operator<< (Logger& logger, const short& log) {
+    return logger << std::to_string(log);
+}
+
+Logger& operator<< (Logger& logger, const unsigned long long& log) {
+    return logger << std::to_string(log);
+}
+
+Logger& operator<< (Logger& logger, const unsigned long& log) {
+    return logger << std::to_string(log);
+}
+
+Logger& operator<< (Logger& logger, const unsigned int& log) {
+    return logger << std::to_string(log);
+}
+
+Logger& operator<< (Logger& logger, const unsigned short& log) {
+    return logger << std::to_string(log);
+}
+
 Logger& operator< (Logger& logger, const std::string& log) {
     if (logger.verbose()) {
         logger << log;
     }
     return logger;
+}
+
+Logger& operator< (Logger& logger, const long long& log) {
+    return logger < std::to_string(log);
+}
+
+Logger& operator< (Logger& logger, const long& log) {
+    return logger < std::to_string(log);
+}
+
+Logger& operator< (Logger& logger, const int& log) {
+    return logger < std::to_string(log);
+}
+
+Logger& operator< (Logger& logger, const short& log) {
+    return logger < std::to_string(log);
+}
+
+Logger& operator< (Logger& logger, const unsigned long long& log) {
+    return logger < std::to_string(log);
+}
+
+Logger& operator< (Logger& logger, const unsigned long& log) {
+    return logger < std::to_string(log);
+}
+
+Logger& operator< (Logger& logger, const unsigned int& log) {
+    return logger < std::to_string(log);
+}
+
+Logger& operator< (Logger& logger, const unsigned short& log) {
+    return logger < std::to_string(log);
+}
+
+bool operator&& (Logger& logger, const bool& operant) {
+    return operant;
 }
